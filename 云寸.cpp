@@ -15,7 +15,7 @@
 #include "curl/curl.h"//https://blog.csdn.net/weixin_44122235/article/details/128969128
 struct WeatherInfo
 {
-    bool is_ERROE;
+    bool is_ERROE = FALSE;
     std::string Location, CurrentTem, Maxtem, MinTem, UpdateTime, CurrentDate, CurrentWeekday, CurrentAQI, CurrentWind_Direction, CurrentWind_speed, CurrentWeather, CurrentRainful, Rainful24, Warnings;
 };
 
@@ -31,6 +31,7 @@ std::string readFileIntoString(std::string filename);
 bool is_stringC(std::string Origin, std::string a, size_t q);
 int Where_cntr(std::string Source_in, size_t i_in);
 bool Get_CURL(std::string url_cURL, std::string _FName);
+void ReadQuoteContent(int* FromWhere, std::string* FromWhat, std::string What, std::string* ToWhat);
 
 
 int main()
@@ -122,67 +123,37 @@ WeatherInfo AnalyseWeatherFile(std::string FileName, int GetMethod)
     if (WeatherSource[0] != 'v' && WeatherSource[0] != '{') weather_ana.is_ERROE = TRUE;
     size_t SourceLength = WeatherSource.size();
 
-    for (size_t i = 0; i < SourceLength; i++)
+    for (int i = 0; i < SourceLength; i++)
     {
-        if (WeatherSource[i] == 'c' && is_stringC(WeatherSource, "cityname", i))                     //          ~<-- where{i + tcntrl - 2}
-        {                                                                                            //          0 1 2 3 4 5<- = Where_cntr(WeatherSource, i + tcntrl - 2)
-            int tcntrl = Where_cntr(WeatherSource, i);               //                                c i t y " : " b c " , ". .
-            for (int j = tcntrl; j < tcntrl + Where_cntr(WeatherSource, i + tcntrl - 2) - 3; j++)    //0 1 2 3 4 5 6 7 8 9 
-            {                                            //                               ~because-->                ~<-- = tcntrl & where{i + tcntrcl}
-                weather_ana.Location += WeatherSource[i + j];                                        //          
-            }
-            i += Where_cntr(WeatherSource, i + tcntrl - 2);
-        }
-
-        if (WeatherSource[i] == 't' && is_stringC(WeatherSource, "temp\"", i))
-        {
-            int tcntrl = Where_cntr(WeatherSource,i);
-            for (int j = tcntrl; j < tcntrl + Where_cntr(WeatherSource, i + tcntrl - 2) - 3; j++)
-            {
-                weather_ana.CurrentTem += WeatherSource[i + j];
-            }
-            i += Where_cntr(WeatherSource, i + tcntrl - 2);
-        }
-
-        if (WeatherSource[i] == 'W' && is_stringC(WeatherSource, "WD", i))
-        {
-            int tcntrl = Where_cntr(WeatherSource, i);
-            for (int j = tcntrl; j < tcntrl + Where_cntr(WeatherSource, i + tcntrl - 2) - 3; j++)
-            {
-                weather_ana.CurrentWind_Direction += WeatherSource[i + j];
-            }
-            i += Where_cntr(WeatherSource, i + tcntrl - 2);
-        }
-
-        if (WeatherSource[i] == 'W' && is_stringC(WeatherSource, "WS", i))
-        {
-            int tcntrl = Where_cntr(WeatherSource, i);
-            for (int j = tcntrl; j < tcntrl + Where_cntr(WeatherSource, i + tcntrl - 2) - 3; j++)
-            {
-                weather_ana.CurrentWind_speed += WeatherSource[i + j];
-            }
-            i += Where_cntr(WeatherSource, i + tcntrl - 2);
-        }
-        if (WeatherSource[i] == 'w' && is_stringC(WeatherSource, "weather\"", i))
-        {
-            int tcntrl = Where_cntr(WeatherSource, i);
-            for (int j = tcntrl; j < tcntrl + Where_cntr(WeatherSource, i + tcntrl - 2) - 3; j++)
-            {
-                weather_ana.CurrentWeather += WeatherSource[i + j];
-            }
-            i += Where_cntr(WeatherSource, i + tcntrl - 2);
-        }
-        if (WeatherSource[i] == 'a' && is_stringC(WeatherSource, "aqi\"", i))
-        {
-            int tcntrl = Where_cntr(WeatherSource, i);
-            for (int j = tcntrl; j < tcntrl + Where_cntr(WeatherSource, i + tcntrl - 2) - 3; j++)
-            {
-                weather_ana.CurrentAQI += WeatherSource[i + j];
-            }
-            i += Where_cntr(WeatherSource, i + tcntrl - 2);
-        }
+        ReadQuoteContent(&i, &WeatherSource, "cityname", &weather_ana.Location);
+        ReadQuoteContent(&i, &WeatherSource, "temp\"", &weather_ana.CurrentTem);
+        ReadQuoteContent(&i, &WeatherSource, "WD", &weather_ana.CurrentWind_Direction);
+        ReadQuoteContent(&i, &WeatherSource, "WS", &weather_ana.CurrentWind_speed);
+        ReadQuoteContent(&i, &WeatherSource, "weather\"", &weather_ana.CurrentWeather);
+        ReadQuoteContent(&i, &WeatherSource, "aqi\"", &weather_ana.CurrentAQI);
     }
     return weather_ana;
+}
+
+//int* FromWhere, std::string* FromWhat, std::string What, std::string* ToWhat
+//FromWhat开始的地方  FromWhat的地址     查找相符的那个字符串     接收找到的字符串
+//查找"abc":"str" 输入what(是abc) 输出ToWhat (是str)
+//原理：数引号
+void ReadQuoteContent(int* FromWhere, std::string* FromWhat, std::string What, std::string* ToWhat)
+{
+    if (is_stringC(*FromWhat, What, *FromWhere))                      //          ~<-- where{i + tcntrl - 2}
+    {                                                                 //          0 1 2 3 4 5<- = Where_cntr(WeatherSource, i + tcntrl - 2)
+        int tcntrl = Where_cntr(*FromWhat, *FromWhere);               //c i t y " : " b c " , ". .
+                                                                      //0 1 2 3 4 5 6 7 8 9 
+        //                                                 ~because-->                ~<-- = tcntrl & where{i + tcntrcl}
+        for (int j = tcntrl; j < tcntrl + Where_cntr(*FromWhat, *FromWhere + tcntrl - 2) - 3; j++)
+        {
+            *ToWhat += (*FromWhat)[*FromWhere + j];
+        }
+        *FromWhere += Where_cntr(*FromWhat, *FromWhere + tcntrl - 2);
+        
+    }
+    
 }
 
 //在analise中判断数据开始的地方(by count the number of \")
