@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <tchar.h>
 
-
+#include <array>
+#include <vector>
 //#include "json\json.h"
 #include <direct.h>
 #include <filesystem>
@@ -16,52 +17,91 @@
 struct WeatherInfo
 {
     bool is_ERROE = FALSE;
-    std::string Location, CurrentTem, Maxtem, MinTem, UpdateTime, CurrentDate, CurrentWeekday, CurrentAQI, CurrentWind_Direction, CurrentWind_speed, CurrentWeather, CurrentRainful, Rainful24, Warnings;
-};
+    std::string Location, LocationCode, PublicIP, CurrentTem, Maxtem, MinTem, UpdateTime, CurrentDate, CurrentWeekday, CurrentAQI, CurrentWind_Direction, CurrentWind_speed, CurrentWeather, CurrentRainful, Rainful24, Warnings;
+    std::vector<std::string> Headers;
+}Weather;
 
-std::string URL,DataLocation ;
+const int _Headers_{ 30 }, _Location_{ 31 }, _Content_{ 32 };//get函数methods
+std::string DataLocation ;
 
 void Get(std::string _url, std::string _Command, std::string _FName);//爬
 std::string getRoamingAppDataPath();
 std::string WCHAR2String(LPCWSTR pwszSrc);
 std::string String_GetCurrentTime();
 void CheckIfDataFileExists();
-WeatherInfo AnalyseWeatherFile(std::string FileName, int GetMethod);
+bool AnalyseWeatherFile(std::string FileName, int GetMethod, WeatherInfo* weather_store);
 std::string readFileIntoString(std::string filename);
-bool is_stringC(std::string Origin, std::string a, size_t q);
-int Where_cntr(std::string Source_in, size_t i_in);
-bool Get_CURL(std::string url_cURL, std::string _FName);
-void ReadQuoteContent(int* FromWhere, std::string* FromWhat, std::string What, std::string* ToWhat);
-
+bool Get_CURL(std::string url_cURL, std::string _FName, std::vector<std::string>* Headers_fun);
+bool ReadQuoteContent(std::string* FromWhat, std::string What, std::string* ToWhat);
+void Store_Headers_Getdata(std::vector<std::string>* Headers_Getdata_Fun);
 
 int main()
 {
+    /*
+    -------------PART ONE : PREPARATIONS---------------------------------
+    */
     SetConsoleOutputCP(CP_UTF8);
     //system("chcp 65001");//cout控制台中文乱码问题
-    //在visual studio的项目属性 -> 配置属性 -> c/c++ -> 命令行 -> 其它选项 中填写 /utf-8
+    //在visual studio的项目属性 -> 配置属性 -> c/c++ -> 命令行 -> 其它选项 中填写 /utf-8  ref->https://learn.microsoft.com/zh-cn/cpp/build/reference/utf-8-set-source-and-executable-character-sets-to-utf-8?view=msvc-170
+    curl_global_init(CURL_GLOBAL_ALL);//初始化cURL
     CheckIfDataFileExists();//Check whether %AppData%/yc exists and create it.
-    
     std::string StringCurrentTime = String_GetCurrentTime();//gat time函数
     
-    URL = "http://d1.weather.com.cn/sk_2d/101270101.html?_=" + StringCurrentTime;
-                            /*
-                            http://d1.weather.com.cn/sk_2d/101270101.html?_=1706879114687
-                                                                       ==>`<=== there is a '_'!
-                            */;
 
-    std::cout << "[INFO]URL is: " << URL << "\n";
-    
-    bool is_sud = Get_CURL(URL, StringCurrentTime + ".txt");
-    if (!is_sud)
+
+    /*
+    -------------PART TWO : MAKE HEADERS---------------------------------
+    */
     {
+        Store_Headers_Getdata(&Weather.Headers);    
+    }
+
+    /*
+    -------------PART THREE : GET LOCATIONS---------------------------------
+    */
+    {
+    std::string URL_GetLocationCode = "http://wgeo.weather.com.cn/ip/?_=" + StringCurrentTime;
+    if (Get_CURL(URL_GetLocationCode, "Locatioin.txt", &Weather.Headers) == 0)
+    {
+        std::cout << "[ERROR]Failed to get location!\n";
+        exit(1);
+    }
+    if (AnalyseWeatherFile("\\Locatioin.txt", _Location_, &Weather) == FALSE || Weather.is_ERROE == TRUE)
+    {
+        std::cout << "[ERROR]Analyse locaton error\n";
+    }
+    std::cout << "[INFO]Location code:" << Weather.LocationCode << "\n[INFO]Location:" << Weather.Location << std::endl;
+    }
+ 
+
+    /*
+    -------------PART FOUR : MAKE CONTENT URL---------------------------------
+    */
+
+    std::string URL_Content = "http://d1.weather.com.cn/sk_2d/" + Weather.LocationCode + ".html?_=" + StringCurrentTime;
+                           
+    /*
+                           
+            http://d1.weather.com.cn/sk_2d/101270101.html?_=1706879114687
+                                                       ==>`<=== there is a '_'!
+     */;
+
+    std::cout << "[INFO]URL is: " << URL_Content << "\n";
+    bool is_sud = Get_CURL(URL_Content, StringCurrentTime + ".txt", &Weather.Headers);
+    if (!is_sud){
         std::cout << "[ERROR]Failed to get!\n";
         exit(1);
     }
+    
+    
  //   Get(URL, "curl", StringCurrentTime + ".txt");
 
  //   system("pause");
-    WeatherInfo Current_Weather_INFO = AnalyseWeatherFile("\\" + StringCurrentTime + ".txt", 1);
-    if (Current_Weather_INFO.is_ERROE == TRUE)
+
+    /*
+    -------------PART FIVE :ANALYSE AND PRINT---------------------------------
+    */
+    if (AnalyseWeatherFile("\\" + StringCurrentTime + ".txt", _Content_ , &Weather) == FALSE || Weather.is_ERROE == TRUE)
     {
         std::cout << "[ERROR]Analyse error\n";
     }
@@ -69,10 +109,10 @@ int main()
     {
         system("pause");
         system("cls");
-        std::cout << "城市:" << Current_Weather_INFO.Location << "\n实时精准气温:" << Current_Weather_INFO.CurrentTem << "℃    ";
-        std::cout << "实时天气:" << Current_Weather_INFO.CurrentWeather << std::endl;
-        std::cout << "风向:" << Current_Weather_INFO.CurrentWind_Direction << "  风速:" << Current_Weather_INFO.CurrentWind_speed<< std::endl;
-        std::cout << "AQI指数:" << Current_Weather_INFO.CurrentAQI << "\n\n";
+        std::cout << "城市:" << Weather.Location << "\n实时精准气温:" << Weather.CurrentTem << "℃    ";
+        std::cout << "实时天气:" << Weather.CurrentWeather << std::endl;
+        std::cout << "风向:" << Weather.CurrentWind_Direction << "  风速:" << Weather.CurrentWind_speed<< std::endl;
+        std::cout << "AQI指数:" << Weather.CurrentAQI << "\n\n";
 
     }
     system("pause");
@@ -101,91 +141,66 @@ void CheckIfDataFileExists() {
 // 下载jsoncpp  -》https://github.com/open-source-parsers/jsoncpp or directly from https://github.com/Kitware/CMake/releases/download/v3.29.0-rc1/cmake-3.29.0-rc1-windows-x86_64.msi
 //运行 amalgamate.py 以安装，把dist文件夹里的include文件夹拷到 右侧解决方案资源管理器中 解决方案-引用-外部依赖项文件夹中
 //https://blog.csdn.net/luxpity/article/details/116809954
-WeatherInfo AnalyseWeatherFile(std::string FileName, int GetMethod)
+bool AnalyseWeatherFile(std::string FileName, int GetMethod, WeatherInfo* weather_store)
 {
-    WeatherInfo weather_ana;
-    weather_ana.is_ERROE = FALSE;
+    (*weather_store).is_ERROE = FALSE;
     if (!std::filesystem::exists(DataLocation + FileName))		//必须先检测目录是否存在才能使用文件入口.
-        weather_ana.is_ERROE = TRUE;
+        (*weather_store).is_ERROE = TRUE;
 
     std::ifstream F_in;
     F_in.open(DataLocation + FileName, std::ios::in);
     if (F_in.is_open() == FALSE) {
-        weather_ana.is_ERROE = TRUE;
+        (*weather_store).is_ERROE = TRUE;
     }
 
     std::string WeatherSource = readFileIntoString(DataLocation + FileName);//read and store in WeatherSource
-    if (WeatherSource == "ERROR") weather_ana.is_ERROE = TRUE;
+    if (WeatherSource == "ERROR") (*weather_store).is_ERROE = TRUE;
     F_in.close();
 
     //分析开始
 
-    if (WeatherSource[0] != 'v' && WeatherSource[0] != '{') weather_ana.is_ERROE = TRUE;
-    size_t SourceLength = WeatherSource.size();
-
-    for (int i = 0; i < SourceLength; i++)
+    if (WeatherSource[0] != 'v' || WeatherSource.empty()) (*weather_store).is_ERROE = TRUE;
+    int SourceLength = WeatherSource.size();
+    
+    if (GetMethod == _Content_)
     {
-        ReadQuoteContent(&i, &WeatherSource, "cityname", &weather_ana.Location);
-        ReadQuoteContent(&i, &WeatherSource, "temp\"", &weather_ana.CurrentTem);
-        ReadQuoteContent(&i, &WeatherSource, "WD", &weather_ana.CurrentWind_Direction);
-        ReadQuoteContent(&i, &WeatherSource, "WS", &weather_ana.CurrentWind_speed);
-        ReadQuoteContent(&i, &WeatherSource, "weather\"", &weather_ana.CurrentWeather);
-        ReadQuoteContent(&i, &WeatherSource, "aqi\"", &weather_ana.CurrentAQI);
+        if (!ReadQuoteContent(&WeatherSource, "cityname", &(*weather_store).Location)) return FALSE;
+        if (!ReadQuoteContent(&WeatherSource, "temp\"", &(*weather_store).CurrentTem)) return FALSE;
+        if (!ReadQuoteContent(&WeatherSource, "WD", &(*weather_store).CurrentWind_Direction)) return FALSE;
+        if (!ReadQuoteContent(&WeatherSource, "WS", &(*weather_store).CurrentWind_speed)) return FALSE;
+        if (!ReadQuoteContent(&WeatherSource, "weather\"", &(*weather_store).CurrentWeather)) return FALSE;
+        if (!ReadQuoteContent(&WeatherSource, "aqi\"", &(*weather_store).CurrentAQI)) return FALSE;
+        
     }
-    return weather_ana;
+    if (GetMethod == _Location_)
+    {
+        if (!ReadQuoteContent(&WeatherSource, "ip", &(*weather_store).PublicIP)) return FALSE;
+        if (!ReadQuoteContent(&WeatherSource, "id", &(*weather_store).LocationCode)) return FALSE;
+        if (!ReadQuoteContent(&WeatherSource, "addr", &(*weather_store).Location)) return FALSE;
+    }
+ 
+    return true;
 }
 
 //int* FromWhere, std::string* FromWhat, std::string What, std::string* ToWhat
 //FromWhat开始的地方  FromWhat的地址     查找相符的那个字符串     接收找到的字符串
 //查找"abc":"str" 输入what(是abc) 输出ToWhat (是str)
 //原理：数引号
-void ReadQuoteContent(int* FromWhere, std::string* FromWhat, std::string What, std::string* ToWhat)
-{
-    if (is_stringC(*FromWhat, What, *FromWhere))                      //          ~<-- where{i + tcntrl - 2}
-    {                                                                 //          0 1 2 3 4 5<- = Where_cntr(WeatherSource, i + tcntrl - 2)
-        int tcntrl = Where_cntr(*FromWhat, *FromWhere);               //c i t y " : " b c " , ". .
-                                                                      //0 1 2 3 4 5 6 7 8 9 
-        //                                                 ~because-->                ~<-- = tcntrl & where{i + tcntrcl}
-        for (int j = tcntrl; j < tcntrl + Where_cntr(*FromWhat, *FromWhere + tcntrl - 2) - 3; j++)
-        {
-            *ToWhat += (*FromWhat)[*FromWhere + j];
-        }
-        *FromWhere += Where_cntr(*FromWhat, *FromWhere + tcntrl - 2);
-        
-    }
-    
+bool ReadQuoteContent(std::string* FromWhat, std::string What, std::string* ToWhat)
+{                                                             
+    int text_start = (*FromWhat).find(What);
+    if (text_start == std::string::npos) return FALSE;
+    int equal_mark = (*FromWhat).find_first_of(":=", text_start);
+    if (equal_mark == std::string::npos) return FALSE;
+    int value_start = (*FromWhat).find("\"", equal_mark) + 1;
+    int value_end = (*FromWhat).find("\"", value_start);
+    if (value_start == std::string::npos || value_end == std::string::npos) return FALSE;
+    //std::cout << text_start << " :" << equal_mark << " :" << value_start << " :" << value_end << std::endl;
+    (*ToWhat).clear();
+    (*ToWhat).append((*FromWhat), value_start, value_end - value_start);
+    return true;
 }
 
-//在analise中判断数据开始的地方(by count the number of \")
-// 初始值：如temp的t所在的i值
-int Where_cntr(std::string Source_in, size_t i_in)
-{
-    int l_q = 0,cntr = 0;
-    while (l_q < 2) {
-        if (Source_in[i_in + cntr + 1] == '\"')//本位是第0位，从1位开检
-        {
-            l_q++;
-        }
-        cntr++;
-    }
-    return (cntr + 1);//返回引号后的一位
-}
-
-
-
-//原始数据，需要数据，i（原始数据开始-1）。
-bool is_stringC(std::string Origin, std::string a, size_t q)
-{
-    //cout<<a;
-    int len = a.size();
-    int m = 0;
-    for (size_t r = q; r < (q + len); r++) {
-
-        if (Origin[r] != a[m])return 0;
-        m++;
-    }
-    return 1;
-}
 
 //读文件 ->https://blog.csdn.net/luxpity/article/details/116809954
 std::string readFileIntoString(std::string filename)
@@ -253,10 +268,11 @@ std::string String_GetCurrentTime() {
 
 //https://blog.csdn.net/MOU_IT/article/details/96457666
 //https://everything.curl.dev/examples/get
-bool Get_CURL(std::string url_cURL, std::string _FName)
-{
-    FILE* fcw;
+//URL ,file name, headers
+bool Get_CURL(std::string url_cURL, std::string _FName, std::vector<std::string>* Headers_fun)
+{ 
     std::string FileDAN = DataLocation + "\\" + _FName;
+    FILE* fcw;
     if (fopen_s(&fcw, FileDAN.c_str(), "wt+") )
     {
         return FALSE;
@@ -264,26 +280,20 @@ bool Get_CURL(std::string url_cURL, std::string _FName)
 
     CURL* curl = curl_easy_init();
     CURLcode res_code;
-    curl_global_init(CURL_GLOBAL_ALL);
 
+    //--headers
     struct curl_slist* headers = NULL;
-    std::string headers_Accept_Str = "Accept: */*";
-    std::string headers_UserAgent_Str = "User - Agent: Mozilla / 5.0 (Windows NT 10.0; Win64; x64) AppleWebKit / 537.36 (KHTML, like Gecko) Chrome / 121.0.0.0 Safari / 537.36 Edg / 121.0.0.0"; 
-    std::string headers_Cookie_Str = "Cookie: f_city=%E6%88%90%E9%83%BD%7C101270101%7C";
-    std::string headers_Referer_Str = "Referer: http://www.weather.com.cn/";
-    std::string headers_Connection_Str = "Connection: keep - alive";
-    std::string headers_AcceptLan_Str = "Accept - Language: zh - CN, zh; q = 0.9, en; q = 0.8, en - GB; q = 0.7, en - US; q = 0.6";
-    headers = curl_slist_append(headers, headers_AcceptLan_Str.c_str());
-    headers = curl_slist_append(headers, headers_Accept_Str.c_str());
-    headers = curl_slist_append(headers, headers_UserAgent_Str.c_str());
-//    headers = curl_slist_append(headers, headers_Cookie_Str.c_str());
-    headers = curl_slist_append(headers, headers_Referer_Str.c_str());
-    headers = curl_slist_append(headers, headers_Connection_Str.c_str());
+    if ((*Headers_fun).size() != 0) {
+        for (int headres_i = 0; headres_i < (*Headers_fun).size(); headres_i++) {
+            headers = curl_slist_append(headers, (*Headers_fun)[headres_i].c_str());
+        std:: cout << "[INFO]Headers -> " << (*Headers_fun)[headres_i] << std::endl;
+        }
+    }
+
     if (curl)
     {
         char* MyIP;
         curl_easy_setopt(curl, CURLOPT_URL, url_cURL.c_str());
-        curl_easy_setopt(curl, CURLOPT_COOKIE, headers_Cookie_Str.c_str());
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 //        curl_easy_setopt(curl, CURLOPT_HEADERDATA, fcw);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, fcw);
@@ -294,8 +304,7 @@ bool Get_CURL(std::string url_cURL, std::string _FName)
         {
             if (res_IP == 0)
             {
-                std::cout << "[INFO]IP is: ";
-                
+                std::cout << "[INFO]IP is: ";               
                 std::cout << MyIP << std::endl;
             }
             curl_slist_free_all(headers);
@@ -348,6 +357,17 @@ void Get(std::string _url, std::string _Command, std::string _FName) {
     */
 }
 
+void Store_Headers_Getdata(std::vector<std::string>* Headers_Getdata_Fun) {
+
+    (*Headers_Getdata_Fun).push_back("Accept: */*");
+ //   (*Headers_Getdata_Fun).push_back("User - Agent: Mozilla / 5.0 (Windows NT 10.0; Win64; x64) AppleWebKit / 537.36 (KHTML, like Gecko) Chrome / 121.0.0.0 Safari / 537.36 Edg / 121.0.0.0");
+//    (*Headers_Getdata_Fun).push_back("Cookie: f_city=%E6%88%90%E9%83%BD%7C101270101%7C");
+    (*Headers_Getdata_Fun).push_back("User-Agent:cURL yc_GetWeather/1.0.0");
+    (*Headers_Getdata_Fun).push_back("Referer:http://www.weather.com.cn/");
+    (*Headers_Getdata_Fun).push_back("Connection: keep-alive");
+    (*Headers_Getdata_Fun).push_back("Accept-Language: zh - CN, zh; q = 0.9, en; q = 0.8, en - GB; q = 0.7, en - US; q = 0.6");
+
+}
 // 运行程序: Ctrl + F5 或调试 >“开始执行(不调试)”菜单
 // 调试程序: F5 或调试 >“开始调试”菜单
 
