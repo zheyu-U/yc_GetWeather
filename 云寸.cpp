@@ -4,7 +4,6 @@
 
 #include <array>
 #include <vector>
-//#include "json\json.h"
 #include <direct.h>
 #include <filesystem>
 #include <fstream>
@@ -13,7 +12,9 @@
 
 #include <windows.h>
 
-#include "curl/curl.h"//https://blog.csdn.net/weixin_44122235/article/details/128969128
+#include "curl/curl.h"//curl https://blog.csdn.net/weixin_44122235/article/details/128969128
+#include "colored-cout/colored_cout.h"//https://github.com/yurablok/colored-cout/
+#include "colored-cout/colored_cout.cpp"
 struct WeatherInfo
 {
     bool is_ERROE = FALSE;
@@ -21,10 +22,10 @@ struct WeatherInfo
     std::vector<std::string> Headers;
 }Weather;
 
-const int _Headers_{ 30 }, _Location_{ 31 }, _Content_{ 32 };//get函数methods
+const int _Headers_{ 30 }, _Location_{ 31 }, _Content_{ 32 };             //get函数methods
 std::string DataLocation ;
 
-void Get(std::string _url, std::string _Command, std::string _FName);//爬
+void Get(std::string _url, std::string _Command, std::string _FName);     //爬
 std::string getRoamingAppDataPath();
 std::string WCHAR2String(LPCWSTR pwszSrc);
 std::string String_GetCurrentTime();
@@ -41,11 +42,11 @@ int main()
     -------------PART ONE : PREPARATIONS---------------------------------
     */
     SetConsoleOutputCP(CP_UTF8);
-    //system("chcp 65001");//cout控制台中文乱码问题
-    //在visual studio的项目属性 -> 配置属性 -> c/c++ -> 命令行 -> 其它选项 中填写 /utf-8  ref->https://learn.microsoft.com/zh-cn/cpp/build/reference/utf-8-set-source-and-executable-character-sets-to-utf-8?view=msvc-170
-    curl_global_init(CURL_GLOBAL_ALL);//初始化cURL
-    CheckIfDataFileExists();//Check whether %AppData%/yc exists and create it.
-    std::string StringCurrentTime = String_GetCurrentTime();//gat time函数
+                                                                         //system("chcp 65001");//cout控制台中文乱码问题
+                                                                         //在visual studio的项目属性 -> 配置属性 -> c/c++ -> 命令行 -> 其它选项 中填写 /utf-8  ref->https://learn.microsoft.com/zh-cn/cpp/build/reference/utf-8-set-source-and-executable-character-sets-to-utf-8?view=msvc-170
+    curl_global_init(CURL_GLOBAL_ALL);                                   //初始化cURL
+    CheckIfDataFileExists();                                             //Check whether %AppData%/yc exists and create it.
+    std::string StringCurrentTime = String_GetCurrentTime();             //gat time函数
     
 
 
@@ -63,14 +64,14 @@ int main()
     std::string URL_GetLocationCode = "http://wgeo.weather.com.cn/ip/?_=" + StringCurrentTime;
     if (Get_CURL(URL_GetLocationCode, "Locatioin.txt", &Weather.Headers) == 0)
     {
-        std::cout << "[ERROR]Failed to get location!\n";
+        std::cout << clr::red << "[ERROR]" << clr::reset << "Failed to get location!\n";
         exit(1);
     }
     if (AnalyseWeatherFile("\\Locatioin.txt", _Location_, &Weather) == FALSE || Weather.is_ERROE == TRUE)
     {
-        std::cout << "[ERROR]Analyse locaton error\n";
+        std::cout << clr::red << "[ERROR]" << clr::reset << "Analyse locaton error\n";
     }
-    std::cout << "[INFO]Location code:" << Weather.LocationCode << "\n[INFO]Location:" << Weather.Location << std::endl;
+    std::cout << clr::green << "[INFO]" << clr::reset << "Location code:" << Weather.LocationCode << "\n" << clr::green << "[INFO]" << clr::reset << "Location:" << Weather.Location << std::endl;
     }
  
 
@@ -86,10 +87,10 @@ int main()
                                                        ==>`<=== there is a '_'!
      */;
 
-    std::cout << "[INFO]URL is: " << URL_Content << "\n";
+    std::cout << clr::green << "[INFO]" << clr::reset << "URL is: " << URL_Content << "\n";
     bool is_sud = Get_CURL(URL_Content, StringCurrentTime + ".txt", &Weather.Headers);
     if (!is_sud){
-        std::cout << "[ERROR]Failed to get!\n";
+        std::cout << clr::red << "[ERROR]" << clr::reset << "Failed to get!\n";
         exit(1);
     }
     
@@ -103,16 +104,24 @@ int main()
     */
     if (AnalyseWeatherFile("\\" + StringCurrentTime + ".txt", _Content_ , &Weather) == FALSE || Weather.is_ERROE == TRUE)
     {
-        std::cout << "[ERROR]Analyse error\n";
+        std::cout << clr::red << "[ERROR]" << clr::reset << "Analyse error\n";
     }
     else
     {
         system("pause");
         system("cls");
-        std::cout << "城市:" << Weather.Location << "\n实时精准气温:" << Weather.CurrentTem << "℃    ";
-        std::cout << "实时天气:" << Weather.CurrentWeather << std::endl;
-        std::cout << "风向:" << Weather.CurrentWind_Direction << "  风速:" << Weather.CurrentWind_speed<< std::endl;
-        std::cout << "AQI指数:" << Weather.CurrentAQI << "\n\n";
+        std::cout << "城市:" << clr::green <<Weather.Location << clr::reset << "\n实时精准气温:" << clr::green << Weather.CurrentTem << "℃    " << clr::reset;
+        std::cout << "实时天气:" << clr::green << Weather.CurrentWeather << clr::reset << std::endl;
+        std::cout << "风向:" << clr::green << Weather.CurrentWind_Direction << clr::reset << "  风速:" << clr::green << Weather.CurrentWind_speed << clr::reset << std::endl;
+        std::cout << "AQI指数:";
+        if (std::stoi(Weather.CurrentAQI) <= 50)std::cout << clr::green << Weather.CurrentAQI << " 优" << clr::reset << "\n\n";
+        else if (std::stoi(Weather.CurrentAQI) <= 100)std::cout << clr::yellow << Weather.CurrentAQI << " 良" << clr::reset << "\n\n";
+        else if (std::stoi(Weather.CurrentAQI) <= 150)std::cout << clr::magenta << Weather.CurrentAQI << " 轻度污染" << clr::reset << "\n\n";
+        else if (std::stoi(Weather.CurrentAQI) <= 200)std::cout << clr::red << Weather.CurrentAQI << " 中度污染" << clr::reset << "\n\n";
+        else if (std::stoi(Weather.CurrentAQI) <= 300)std::cout << clr::on_magenta << Weather.CurrentAQI << " 重度污染" << clr::reset << "\n\n";
+        else if (std::stoi(Weather.CurrentAQI) > 300)std::cout << clr::on_red << Weather.CurrentAQI << " 严重污染" << clr::reset << "\n\n";
+
+        
 
     }
     system("pause");
@@ -123,7 +132,7 @@ int main()
 //Check whether %AppData%/yc exists and create it.
 void CheckIfDataFileExists() {
     DataLocation = getRoamingAppDataPath() + "\\yc";
-    std::cout << "[INFO]Data location is:" << DataLocation << std::endl;
+    std::cout << clr::green << "[INFO]" << clr::reset << "Data location is:" << DataLocation << std::endl;
     std::filesystem::path Path_DataLocation = DataLocation;
     if (!std::filesystem::exists(Path_DataLocation)) {
         if (!std::filesystem::create_directories(Path_DataLocation)) {
@@ -138,9 +147,7 @@ void CheckIfDataFileExists() {
 }
 
 
-// 下载jsoncpp  -》https://github.com/open-source-parsers/jsoncpp or directly from https://github.com/Kitware/CMake/releases/download/v3.29.0-rc1/cmake-3.29.0-rc1-windows-x86_64.msi
-//运行 amalgamate.py 以安装，把dist文件夹里的include文件夹拷到 右侧解决方案资源管理器中 解决方案-引用-外部依赖项文件夹中
-//https://blog.csdn.net/luxpity/article/details/116809954
+
 bool AnalyseWeatherFile(std::string FileName, int GetMethod, WeatherInfo* weather_store)
 {
     (*weather_store).is_ERROE = FALSE;
@@ -262,7 +269,7 @@ std::string String_GetCurrentTime() {
     std::chrono::system_clock::time_point _F_Time_0 = std::chrono::system_clock::time_point(std::chrono::seconds(0));
     std::chrono::duration<double> F_CurrentTimeGap = _F_CurrentTime - _F_Time_0;
     std::string STR_CurrentTime = std::to_string(long long(F_CurrentTimeGap.count() * 1000));
-    std::cout << "[INFO]Current Time is: " << STR_CurrentTime << " .\n";
+    std::cout << clr::green << "[INFO]" << clr::reset << "Current Time is: " << STR_CurrentTime << " .\n";
     return STR_CurrentTime;
 }
 
@@ -284,9 +291,9 @@ bool Get_CURL(std::string url_cURL, std::string _FName, std::vector<std::string>
     //--headers
     struct curl_slist* headers = NULL;
     if ((*Headers_fun).size() != 0) {
-        for (int headres_i = 0; headres_i < (*Headers_fun).size(); headres_i++) {
+        for (size_t headres_i = 0; headres_i < (*Headers_fun).size(); headres_i++) {
             headers = curl_slist_append(headers, (*Headers_fun)[headres_i].c_str());
-        std:: cout << "[INFO]Headers -> " << (*Headers_fun)[headres_i] << std::endl;
+        std:: cout << clr::green << "[INFO]" << clr::reset << "Headers -> " << (*Headers_fun)[headres_i] << std::endl;
         }
     }
 
@@ -304,7 +311,7 @@ bool Get_CURL(std::string url_cURL, std::string _FName, std::vector<std::string>
         {
             if (res_IP == 0)
             {
-                std::cout << "[INFO]IP is: ";               
+                std::cout << clr::green << "[INFO]" << clr::reset << "IP is: ";               
                 std::cout << MyIP << std::endl;
             }
             curl_slist_free_all(headers);
@@ -315,7 +322,7 @@ bool Get_CURL(std::string url_cURL, std::string _FName, std::vector<std::string>
         
         
     }
-    std::cout << "[ERROR]curlcode is :" << curl << std::endl;
+    std::cout << clr::red << "[ERROR]" << clr::reset << "curlcode is :" << curl << std::endl;
     curl_slist_free_all(headers);
     curl_easy_cleanup(curl);
     fclose(fcw);
@@ -337,7 +344,7 @@ void Get(std::string _url, std::string _Command, std::string _FName) {
         + "--compressed --insecure "
         + ">> " + DataLocation + "\\" + _FName;
     //节选自Cookie，没有也能爬--> ; Hm_lvt_080dabacb001ad3dc8b9b9049b36d43b=1705818063,1706689152,1706779743,1706878760; Hm_lpvt_080dabacb001ad3dc8b9b9049b36d43b=1706879055
-    std::cout << "[INFO]Command is --> (cmd) " + TryCommand << std::endl;
+    std::cout << clr::green << "[INFO]" << clr::reset << "Command is --> (cmd) " + TryCommand << std::endl;
 
     //ShellExecuteA(NULL, "runas", "cmd", "/c ipconfig >> D:\\disk.txt", NULL, SW_SHOWNORMAL);
     ShellExecuteA(NULL, "open", "cmd", TryCommand.c_str(), NULL, SW_MAX);
