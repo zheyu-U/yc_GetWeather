@@ -1,6 +1,7 @@
 # 云寸  
 一个控制台程序。  
 get_weather的全新版本。使用C++重写。
+版本信息参见 Release.md
 ## 功能  
 输出天气信息。  
 通过爬取中国天气网([weather.com.cn](http://weather.com.cn))的天气数据，并加以分析。  

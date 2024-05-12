@@ -71,8 +71,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>D:\code\tools;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\code\tools\curl-8.6.0\builds\libcurl-vc17-x64-release-static-ipv6-sspi-schannel\include;</IncludePath>
-    <LibraryPath>D:\code\tools\curl-8.6.0\builds\libcurl-vc17-x64-release-static-ipv6-sspi-schannel\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <IncludePath>D:\code\tools;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\code\tools\curl-8.6.0\builds\libcurl-vc17-x64-release-static-ipv6-sspi-schannel\include;D:\code\tools\curl-8.6.0\builds\libcurl-vc17-x64-debug-static-ipv6-sspi-schannel\include</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);D:\code\tools\curl-8.6.0\builds\libcurl-vc17-x64-debug-static-ipv6-sspi-schannel\lib</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>D:\code\tools;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\code\tools\curl-8.6.0\builds\libcurl-vc17-x64-release-static-ipv6-sspi-schannel\include</IncludePath>
@@ -126,16 +126,17 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <SupportJustMyCode>false</SupportJustMyCode>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libcurl_a.lib;Ws2_32.lib;Wldap32.lib;winmm.lib;Crypt32.lib;Normaliz.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libcurl_a_debug.lib;Ws2_32.lib;Wldap32.lib;winmm.lib;Crypt32.lib;Normaliz.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -158,11 +159,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="colored_cout.cpp" />
+    <ClCompile Include="weather.cpp" />
     <ClCompile Include="云寸.cpp">
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <SupportJustMyCode Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</SupportJustMyCode>
       <SupportJustMyCode Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</SupportJustMyCode>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="colored_cout.h" />
+    <ClInclude Include="resource1.h" />
+    <ClInclude Include="weather.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="云寸1.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

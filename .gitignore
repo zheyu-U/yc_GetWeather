@@ -361,3 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/resource.h
+/resource1.h
+/云寸1.rc
+/云寸.rc

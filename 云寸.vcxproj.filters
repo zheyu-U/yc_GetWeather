@@ -18,5 +18,27 @@
     <ClCompile Include="云寸.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="weather.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="colored_cout.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="weather.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="colored_cout.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="resource1.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="云寸1.rc">
+      <Filter>资源文件</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>
