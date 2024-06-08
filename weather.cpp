@@ -1,9 +1,10 @@
 ﻿#include "weather.h"
 
+using namespace weathern;
 //获取当前时间
 std::string weather::String_GetCurrentTime()
 {
-	
+
     /*一种获取当前时间方法
     long long _T_CurrentTime = std::chrono::duration_cast<std::chrono::milliseconds>(_CurrentTime.time_since_epoch()).count();
     std::cout << _T_CurrentTime << std::endl;
@@ -12,11 +13,36 @@ std::string weather::String_GetCurrentTime()
     std::chrono::system_clock::time_point _F_Time_0 = std::chrono::system_clock::time_point(std::chrono::seconds(0));
     std::chrono::duration<double> F_CurrentTimeGap = _F_CurrentTime - _F_Time_0;
     std::string STR_CurrentTime = std::to_string(long long(F_CurrentTimeGap.count() * 1000));
-    std::cout << clr::green << "[INFO]" << clr::reset << "Current Time is: " << STR_CurrentTime << " .\n";
+    //std::cout << clr::green << "[INFO]" << clr::reset << "Current Time is: " << STR_CurrentTime << " .\n";
+    log_write(Info, "Current Time is: " + STR_CurrentTime + " .");
     return STR_CurrentTime;
 
 }
 
+//log_write在开发中
+std::string weather::log_write(const int lvl,const std::string writelog)
+{
+    std::string loglvl;
+    clr colorShow = clr::on_red;
+    switch (lvl)
+    {
+    case Err:
+        loglvl = "[ERROR]";
+        colorShow = clr::red;
+        break;
+    case Warn:
+        loglvl = "[WARNING]";
+        colorShow = clr::yellow;
+        break;
+    case Info:
+        loglvl = "[INFO]";
+        colorShow = clr::green;
+        break;
+    }
+    std::cout << colorShow << loglvl << clr::reset;
+    std::cout << writelog << std::endl;
+    return loglvl + writelog;
+}
 
 std::string weather::Get_DataLocation()
 {
@@ -26,16 +52,19 @@ std::string weather::Get_DataLocation()
 //Check whether %AppData%/yc exists and create it.
 void weather::CheckIfDataFileExists() {
     DataLocation = getRoamingAppDataPath() + "\\yc";
-    std::cout << clr::green << "[INFO]" << clr::reset << "Data location is:" << DataLocation << std::endl;
+    //std::cout << clr::green << "[INFO]" << clr::reset << "Data location is:" << DataLocation << std::endl;
+    log_write(Info, "Data location is:" + DataLocation);
     std::filesystem::path Path_DataLocation = DataLocation;
     if (!std::filesystem::exists(Path_DataLocation)) {
         if (!std::filesystem::create_directories(Path_DataLocation)) {
-            std::cout << clr::red << "[ERROR]" << clr::reset << "无法储存数据文件。创建%AppData%/yc失败。\n";
+            //std::cout << clr::red << "[ERROR]" << clr::reset << "无法储存数据文件。创建%AppData%/yc失败。\n";
+            log_write(Err, "无法储存数据文件。创建%AppData%/yc失败。");
             exit(0);
         }
     }
     if (!std::filesystem::exists(Path_DataLocation)) {
-        std::cout << clr::red << "[ERROR]" << clr::reset << "无法储存数据文件。创建%AppData%/yc失败。甚至std::filesystem::create_directories()没有报错。是用户名含中文名吗？\n";
+        //std::cout << clr::red << "[ERROR]" << clr::reset << "无法储存数据文件。创建%AppData%/yc失败。甚至std::filesystem::create_directories()没有报错。是用户名含中文名吗？\n";
+        log_write(Err, "无法储存数据文件。创建%AppData%/yc失败。甚至std::filesystem::create_directories()没有报错。是用户名含中文名吗？");
         exit(0);
     }
 }
@@ -72,7 +101,7 @@ void weather::AnalyseWeatherFile(std::string FileName, int GetMethod, weather* w
     if (WeatherSource[0] != 'v' || WeatherSource.empty()) throw std::invalid_argument("INVALID CONTENT");
     size_t SourceLength = WeatherSource.size();
 
-    if (GetMethod == weathern::_Content_)
+    if (GetMethod == _Content_)
     {
         if (!ReadQuoteContent(&WeatherSource, "cityname", &(*weather_store).Location)) throw std::invalid_argument("NOT FOUND");
         if (!ReadQuoteContent(&WeatherSource, "temp\"", &(*weather_store).CurrentTem)) throw std::invalid_argument("NOT FOUND");
@@ -84,11 +113,34 @@ void weather::AnalyseWeatherFile(std::string FileName, int GetMethod, weather* w
         if (!ReadQuoteContent(&WeatherSource, "date\"", &(*weather_store).CurrentDate)) throw std::invalid_argument("NOT FOUND");
 
     }
-    if (GetMethod == weathern::_Location_)
+    if (GetMethod == _Location_)
     {
         if (!ReadQuoteContent(&WeatherSource, "ip", &(*weather_store).PublicIP)) throw std::invalid_argument("NOT FOUND");
         if (!ReadQuoteContent(&WeatherSource, "id", &(*weather_store).LocationCode)) throw std::invalid_argument("NOT FOUND");
         if (!ReadQuoteContent(&WeatherSource, "addr", &(*weather_store).Location)) throw std::invalid_argument("NOT FOUND");
+    }
+    if (GetMethod == _Warnings_)
+    {
+        std::string rawWarnings;
+        if (!ReadQuoteContent(&WeatherSource, "\"w\"", &rawWarnings)) throw std::invalid_argument("NOT FOUND");
+        if (rawWarnings.empty()) (*weather_store).Warnings = "";
+        else {
+            if (!ReadQuoteContent(&rawWarnings, "w9", &(*weather_store).Warnings)) throw std::invalid_argument("NOT FOUND");
+        }
+    }
+}
+
+void weather::AnalyseWeatherFile_try(std::string FileName, int GetMethod, weather* weather_store)
+{
+    try { AnalyseWeatherFile(FileName, GetMethod, weather_store); }
+    catch (std::invalid_argument& excpt_AnA)
+    {
+        std::string err = excpt_AnA.what();
+        if (err == "NOT EXIST")  log_write(Err, "File does not exists.");
+        if (err == "NOT OPEN")    log_write(Err, "File can not open.");
+        if (err == "INVALID CONTENT")   log_write(Err, "Cann't understand....There might be something wrong with the headers.");
+        if (err == "NOT FOUND")   log_write(Err, "Cann't find the weather infomation....");
+        exit(1);
     }
 }
 
@@ -153,8 +205,11 @@ bool weather::ReadQuoteContent(std::string* FromWhat, std::string What, std::str
     if (text_start == std::string::npos) return FALSE;
     size_t equal_mark = (*FromWhat).find_first_of(":=", text_start);
     if (equal_mark == std::string::npos) return FALSE;
-    size_t value_start = (*FromWhat).find("\"", equal_mark) + 1;
-    size_t value_end = (*FromWhat).find("\"", value_start);
+    size_t value_start = (*FromWhat).find_first_of("\"[{", equal_mark) + 1;
+    size_t value_end = std::string::npos;
+    if ((*FromWhat)[value_start - 1] == '{') value_end = (*FromWhat).find_first_of("}", value_start);
+    else if ((*FromWhat)[value_start - 1] == '\"') value_end = (*FromWhat).find_first_of("\"", value_start);
+    else value_end = (*FromWhat).find_first_of("]", value_start);
     if (value_start == std::string::npos || value_end == std::string::npos) return FALSE;
     //std::cout << text_start << " :" << equal_mark << " :" << value_start << " :" << value_end << std::endl;
     (*ToWhat).clear();
@@ -183,7 +238,8 @@ bool weather::Get_CURL(std::string url_cURL, std::string _FName, std::vector<std
     if ((*Headers_fun).size() != 0) {
         for (size_t headres_i = 0; headres_i < (*Headers_fun).size(); headres_i++) {
             headers = curl_slist_append(headers, (*Headers_fun)[headres_i].c_str());
-            std::cout << clr::green << "[INFO]" << clr::reset << "Headers -> " << (*Headers_fun)[headres_i] << std::endl;
+            //std::cout << clr::green << "[INFO]" << clr::reset << "Headers -> " << (*Headers_fun)[headres_i] << std::endl;
+            log_write(Info, "Headers -> " + (*Headers_fun)[headres_i]);
         }
     }
 
@@ -201,8 +257,10 @@ bool weather::Get_CURL(std::string url_cURL, std::string _FName, std::vector<std
         {
             if (res_IP == 0)
             {
-                std::cout << clr::green << "[INFO]" << clr::reset << "IP is: ";
-                std::cout << MyIP << std::endl;
+                //std::cout << clr::green << "[INFO]" << clr::reset << "IP is: ";
+                std::string MyIP_s = MyIP;
+                log_write(Info, "IP is: " + MyIP_s);
+                //std::cout << MyIP << std::endl;
             }
             curl_slist_free_all(headers);
             curl_easy_cleanup(curl);
@@ -210,7 +268,8 @@ bool weather::Get_CURL(std::string url_cURL, std::string _FName, std::vector<std
             return TRUE;
         }
     }
-    std::cout << clr::red << "[ERROR]" << clr::reset << "curlcode is :" << curl << std::endl;
+    //std::cout << clr::red << "[ERROR]" << clr::reset << "curlcode is :" << curl << std::endl;
+    log_write(Err, "curlcode is " + res_code);
     curl_slist_free_all(headers);
     curl_easy_cleanup(curl);
     fclose(fcw);

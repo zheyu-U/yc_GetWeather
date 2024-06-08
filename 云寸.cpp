@@ -4,40 +4,31 @@
 #include "weather.h"
 #include "colored_cout.h"//https://github.com/yurablok/colored-cout/
 
-weather Weather;
+
 
 int main()
 {
-    
+    weather Weather;
     SetConsoleOutputCP(CP_UTF8);                                         //PREPARATIONS
     system("chcp 65001");                                                //cout控制台中文乱码问题 在visual studio的项目属性 -> 配置属性 -> c/c++ -> 命令行 -> 其它选项 中填写 /utf-8  ref->https://learn.microsoft.com/zh-cn/cpp/build/reference/utf-8-set-source-and-executable-character-sets-to-utf-8?view=msvc-170
     curl_global_init(CURL_GLOBAL_ALL);                                   //初始化cURL
     Weather.CheckIfDataFileExists();                                     //Check whether %AppData%/yc exists and create it.
     std::string StringCurrentTime = Weather.String_GetCurrentTime();     //gat time函数
-    {
-        Weather.Store_Headers_Getdata(&Weather.Headers);                 //MAKE Headers()
-    }
+    Weather.Store_Headers_Getdata(&Weather.Headers);                 //MAKE Headers()
     
-    {                                                                    //PART THREE : GET LOCATIONS
+ 
+    {//PART THREE : GET LOCATIONS
     std::string URL_GetLocationCode = "http://wgeo.weather.com.cn/ip/?_=" + StringCurrentTime;
+
     if (Weather.Get_CURL(URL_GetLocationCode, "Locatioin.txt", &Weather.Headers) == 0)
     {
-        std::cout << clr::red << "[ERROR]" << clr::reset << "Failed to get location!\n";
+        Weather.log_write(weathern::Err, "Failed to get location!");
+        /*std::cout << clr::red << "[ERROR]" << clr::reset << "Failed to get location!\n";*/
         exit(1);
     }
-    try { 
-        Weather.AnalyseWeatherFile("\\Locatioin.txt", weathern::_Location_, &Weather); 
-    }
-    catch (std::invalid_argument& excpt_AnA)
-    {
-        std::string err = excpt_AnA.what();
-        if (err == "NOT EXIST")  std::cout << clr::red << "[ERROR]" << clr::reset << "File does not exists.\n";
-        if (err == "NOT OPEN")    std::cout << clr::red << "[ERROR]" << clr::reset << "File can not open.\n";
-        if (err == "INVALID CONTENT")   std::cout << clr::red << "[ERROR]" << clr::reset << "Cann't understand....\n";
-        if (err == "NOT FOUND")   std::cout << clr::red << "[ERROR]" << clr::reset << "Cann't find the weather infomation....\n";
-        exit(1);
-    }
-    std::cout << clr::green << "[INFO]" << clr::reset << "Location code:" << Weather.LocationCode << "\n" << clr::green << "[INFO]" << clr::reset << "Location:" << Weather.Location << std::endl;
+    
+    Weather.AnalyseWeatherFile_try("\\Locatioin.txt", weathern::_Location_, &Weather); 
+    Weather.log_write(weathern::Info, "Location code:" + Weather.LocationCode + " Location:" + Weather.Location);
     }
 
     std::string URL_Content = "http://d1.weather.com.cn/sk_2d/" + Weather.LocationCode + ".html?_=" + StringCurrentTime;//MAKE CONTENT URL       
@@ -45,27 +36,33 @@ int main()
                             http://d1.weather.com.cn/sk_2d/101270101.html?_=1706879114687
                                                                        ==>`<=== there is a '_'!
                      */
-    std::cout << clr::green << "[INFO]" << clr::reset << "URL is: " << URL_Content << "\n";
-    bool is_sud = Weather.Get_CURL(URL_Content, StringCurrentTime + ".txt", &Weather.Headers );
+
+    Weather.log_write(weathern::Info, "Get content.URL is: " + URL_Content );
+    bool is_sud = Weather.Get_CURL(URL_Content, Weather.LocationCode + "." + StringCurrentTime + ".txt", &Weather.Headers );
     if (!is_sud){
-        std::cout << clr::red << "[ERROR]" << clr::reset << "Failed to get!\n";
+        Weather.log_write(weathern::Err, "Failed to get!");
         exit(1);
+    }
+
+    {
+        std::string URL_Warnings = "http://d1.weather.com.cn/dingzhi/" + Weather.LocationCode + ".html?_=" + StringCurrentTime;//MAKE CONTENT URL       
+        /*
+                http://d1.weather.com.cn/dingzhi/101270101.html?_=1717853928121
+                                                             ==>`<=== there is a '_'!
+         */
+
+        Weather.log_write(weathern::Info, "Get warnings.URL is: " + URL_Warnings);
+        bool is_sud = Weather.Get_CURL(URL_Warnings, "w" + Weather.LocationCode + "." + StringCurrentTime + ".txt", &Weather.Headers);
+        if (!is_sud) {
+            Weather.log_write(weathern::Err, "Failed to get!");
+            exit(1);
+        }
     }
     
-    bool isErr = false;//ANALYSE AND PRINT
-    try
-    {
-        Weather.AnalyseWeatherFile("\\" + StringCurrentTime + ".txt", weathern::_Content_, &Weather);
-    }
-    catch (std::invalid_argument& excpt_AnA)
-    {
-        std::string err = excpt_AnA.what();
-        if (err == "NOT EXIST")  std::cout << clr::red << "[ERROR]" << clr::reset << "File does not exists.\n";
-        if (err == "NOT OPEN")    std::cout << clr::red << "[ERROR]" << clr::reset << "File can not open.\n";
-        if (err == "INVALID CONTENT")   std::cout << clr::red << "[ERROR]" << clr::reset << "Cann't understand....\n";
-        if (err == "NOT FOUND")   std::cout << clr::red << "[ERROR]" << clr::reset << "Cann't find the weather infomation....\n";
-        exit(1);
-    }
+    //ANALYSE AND PRINT
+    Weather.AnalyseWeatherFile_try("\\" + Weather.LocationCode + "." + StringCurrentTime + ".txt", weathern::_Content_, &Weather);
+    Weather.AnalyseWeatherFile_try("\\w" + Weather.LocationCode + "." + StringCurrentTime + ".txt", weathern::_Warnings_, &Weather);
+    
     {
         system("pause");
         system("cls");
@@ -84,6 +81,7 @@ int main()
         else if (std::stoi(Weather.CurrentAQI) <= 200)std::cout << clr::red << Weather.CurrentAQI << " 中度污染" << clr::reset << "\n\n";
         else if (std::stoi(Weather.CurrentAQI) <= 300)std::cout << clr::on_magenta << Weather.CurrentAQI << " 重度污染" << clr::reset << "\n\n";
         else if (std::stoi(Weather.CurrentAQI) > 300)std::cout << clr::on_red << Weather.CurrentAQI << " 严重污染" << clr::reset << "\n\n";
+        if (!Weather.Warnings.empty()) std::cout << clr::white << Weather.Warnings << clr::reset << std::endl << std::endl;
         std::cout << "更多请访问 " << clr::cyan << "http://www.weather.com.cn/\n" << clr::reset;
     }
     system("pause");

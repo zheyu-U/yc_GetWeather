@@ -15,7 +15,8 @@
 #include <windows.h>
 
 namespace weathern {
-    const int _Headers_{ 30 }, _Location_{ 31 }, _Content_{ 32 };             //get函数methods
+    const int _Headers_{ 30 }, _Location_{ 31 }, _Content_{ 32 }, _Warnings_{ 33 };             //get函数methods
+    const int Err{ 10 }, Warn{ 11 }, Info{ 12 };
 }
 
 class weather
@@ -24,10 +25,13 @@ public:
         std::string Location, LocationCode, PublicIP, CurrentTem, Maxtem, MinTem, UpdateTime, CurrentDate, CurrentWeekday, CurrentAQI, CurrentWind_Direction, CurrentWind_speed, CurrentWeather, CurrentRainful, Rainful24, Warnings;
         std::vector<std::string> Headers;
         
+        std::string log_write(int lvl, std::string writelog);
+
         std::string Get_DataLocation();
         void CheckIfDataFileExists();
         std::string String_GetCurrentTime();
         void AnalyseWeatherFile(std::string FileName, int GetMethod, weather* weather_store);
+        void AnalyseWeatherFile_try(std::string FileName, int GetMethod, weather* weather_store);
         std::string getRoamingAppDataPath();
         std::string WCHAR2String(LPCWSTR pwszSrc);
         std::string readFileIntoString(std::string filename);
