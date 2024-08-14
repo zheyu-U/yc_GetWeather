@@ -76,7 +76,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>D:\code\tools;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\code\tools\curl-8.6.0\builds\libcurl-vc17-x64-release-static-ipv6-sspi-schannel\include</IncludePath>
-    <LibraryPath>D:\code\tools\curl-8.6.0\builds\libcurl-vc17-x64-release-static-ipv6-sspi-schannel\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <LibraryPath>D:\code\tools\lexbor-2.3.0-build\Release;D:\code\tools\curl-8.6.0\builds\libcurl-vc17-x64-release-static-ipv6-sspi-schannel\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>D:\code\tools;D:\code\tools\curl-8.6.0\builds\libcurl-vc17-x86-release-static-ipv6-sspi-schannel\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
@@ -160,7 +160,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="colored_cout.cpp" />
+    <ClCompile Include="Tools.cpp" />
     <ClCompile Include="weather.cpp" />
+    <ClCompile Include="WeatherException.cpp" />
+    <ClCompile Include="WebPage.cpp" />
     <ClCompile Include="云寸.cpp">
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <SupportJustMyCode Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</SupportJustMyCode>
@@ -170,7 +173,10 @@
   <ItemGroup>
     <ClInclude Include="colored_cout.h" />
     <ClInclude Include="resource1.h" />
+    <ClInclude Include="Tools.h" />
     <ClInclude Include="weather.h" />
+    <ClInclude Include="WeatherException.h" />
+    <ClInclude Include="WebPage.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="云寸1.rc" />
