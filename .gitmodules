@@ -1,0 +1,6 @@
+[submodule "curl"]
+	path = curl
+	url = https://github.com/curl/curl.git
+[submodule "colored-cout"]
+	path = colored-cout
+	url = https://github.com/yurablok/colored-cout.git
