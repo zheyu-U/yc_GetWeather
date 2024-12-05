@@ -3,7 +3,11 @@
 #define _TOOLS
 
 //警告 不得包含 WebPage.h
+
+#ifdef _CONSOLE
 #include "colored_cout.h"//https://github.com/yurablok/colored-cout/
+#endif // _CONSOLE
+
 #include "WeatherException.h"
 #include <iostream>
 #include <string>
@@ -21,7 +25,7 @@ namespace Tools
 	std::string Get_DataLocation();
 	void CheckIfDataFileExists();
 	std::string String_GetCurrentTime();
-	
+
 }
 
 #endif // !_TOOLS

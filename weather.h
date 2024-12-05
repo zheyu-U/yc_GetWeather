@@ -2,8 +2,11 @@
 #ifndef _WEATHER_H_
 #define _WEATHER_H_
 
-#include "WebPage.h"
+#ifdef _CONSOLE
 #include "curl/curl.h"//curl https://blog.csdn.net/weixin_44122235/article/details/128969128
+#endif // _CONSOLE
+
+#include "WebPage.h"
 #include "Tools.h"
 #include "WeatherException.h"
 #include <chrono>
@@ -27,6 +30,7 @@ public:
 
 	void analysis(class WebPage* page);
 	bool get_CURL(std::string url_cURL, std::string _FName);
+	bool get_HttpClient(std::string url_cURL, std::string *res);
 	bool get_weather(WebPage::ContentType type, WebPage* page);
 	bool get_weather_kit(WebPage::ContentType type);
 

@@ -1,4 +1,5 @@
-﻿#include "WeatherException.h"
+﻿#include "pch.h"
+#include "WeatherException.h"
 
 const WeatherException::ExcptType
 WeatherException::ExcptType::content_too_long{ "The content is out of length." },

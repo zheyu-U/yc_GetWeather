@@ -1,8 +1,13 @@
-﻿#include "Tools.h"
+﻿#include "pch.h"
+#include "Tools.h"
+
+
 
 //获取 LocalAppDataPath    >>Reference:https://zhuanlan.zhihu.com/p/529344650
 //<shlobj.h>
 std::string Tools::getRoamingAppDataPath() {
+
+#ifdef _CONSOLE
 	PWSTR strPath = nullptr;
 	std::filesystem::path appDataPath;
 
@@ -15,8 +20,17 @@ std::string Tools::getRoamingAppDataPath() {
 		std::filesystem::filesystem_error::runtime_error e("Unable to store data");
 		throw e;
 	}
-
 	return appDataPath.string();
+#endif // _CONSOLE
+
+
+#ifdef DeskTop_yc
+#include <winrt/Windows.Storage.h>
+	winrt::Windows::Storage::UserDataPaths c = winrt::Windows::Storage::UserDataPaths::GetDefault();
+	return winrt::to_string(c.RoamingAppData());
+#endif
+
+
 }
 
 
@@ -46,6 +60,8 @@ void Tools::readFileIntoString(std::string Path, std::string* str)
 void Tools::log_write(const int lvl, const std::string writelog)
 {
 
+#ifdef _CONSOLE  //控制台程序使用
+
 	std::string loglvl;
 	clr colorShow = clr::on_red;
 	switch (lvl)
@@ -73,10 +89,11 @@ void Tools::log_write(const int lvl, const std::string writelog)
 #endif // !_DEBUG
 
 #ifdef _DEBUG  //display when debug 调试时才显示	
-		std::cout << colorShow << loglvl << clr::reset;
-		std::cout << writelog << std::endl;
+	std::cout << colorShow << loglvl << clr::reset;
+	std::cout << writelog << std::endl;
 #endif // _DEBUG
 
+#endif // _CONSOLE
 }
 
 

@@ -71,20 +71,20 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>D:\code\tools;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\code\tools\curl-8.6.0\builds\libcurl-vc17-x64-release-static-ipv6-sspi-schannel\include;D:\code\tools\curl-8.6.0\builds\libcurl-vc17-x64-debug-static-ipv6-sspi-schannel\include</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);D:\code\tools\curl-8.6.0\builds\libcurl-vc17-x64-debug-static-ipv6-sspi-schannel\lib</LibraryPath>
+    <IncludePath>D:\code\tools;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\code\tools\curl\builds\libcurl-vc17-x64-release-static-ipv6-sspi-schannel\include;D:\code\tools\curl-8.6.0\builds\libcurl-vc17-x64-debug-static-ipv6-sspi-schannel\include</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);D:\code\tools\curl\builds\libcurl-vc17-x64-debug-static-ipv6-sspi-schannel\lib</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>D:\code\tools;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\code\tools\curl-8.6.0\builds\libcurl-vc17-x64-release-static-ipv6-sspi-schannel\include</IncludePath>
-    <LibraryPath>D:\code\tools\lexbor-2.3.0-build\Release;D:\code\tools\curl-8.6.0\builds\libcurl-vc17-x64-release-static-ipv6-sspi-schannel\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <IncludePath>D:\code\tools;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\code\tools\curl\builds\libcurl-vc17-x64-release-static-ipv6-sspi-schannel\include</IncludePath>
+    <LibraryPath>D:\code\tools\curl\builds\libcurl-vc17-x64-release-static-ipv6-sspi-schannel\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>D:\code\tools;D:\code\tools\curl-8.6.0\builds\libcurl-vc17-x86-release-static-ipv6-sspi-schannel\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath>D:\code\tools\curl-8.6.0\builds\libcurl-vc17-x86-release-static-ipv6-sspi-schannel\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <IncludePath>D:\code\tools;D:\code\tools\curl\builds\libcurl-vc17-x86-release-static-ipv6-sspi-schannel\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <LibraryPath>D:\code\tools\curl\builds\libcurl-vc17-x86-release-static-ipv6-sspi-schannel\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>D:\code\tools;D:\code\tools\curl-8.6.0\builds\libcurl-vc17-x86-release-static-ipv6-sspi-schannel\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);D:\code\tools\curl-8.6.0\builds\libcurl-vc17-x86-release-static-ipv6-sspi-schannel\lib</LibraryPath>
+    <IncludePath>D:\code\tools;D:\code\tools\curl\builds\libcurl-vc17-x86-release-static-ipv6-sspi-schannel\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);D:\code\tools\curl\builds\libcurl-vc17-x86-release-static-ipv6-sspi-schannel\lib</LibraryPath>
     <AllProjectIncludesArePublic>true</AllProjectIncludesArePublic>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -160,6 +160,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="colored_cout.cpp" />
+    <ClCompile Include="pch.cpp" />
     <ClCompile Include="Tools.cpp" />
     <ClCompile Include="weather.cpp" />
     <ClCompile Include="WeatherException.cpp" />
@@ -172,6 +173,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="colored_cout.h" />
+    <ClInclude Include="pch.h" />
     <ClInclude Include="resource1.h" />
     <ClInclude Include="Tools.h" />
     <ClInclude Include="weather.h" />

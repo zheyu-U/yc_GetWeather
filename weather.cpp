@@ -1,4 +1,5 @@
-﻿#include "weather.h"
+﻿#include "pch.h"
+#include "weather.h"
 
 using namespace Tools;
 
@@ -14,7 +15,7 @@ void Weather::analysis(WebPage* page)
 
 	if ((*WeatherSource)[0] != 'v' || WeatherSource->empty()) throw WeatherException(ET::invalid_formatting, AM::back, "Formatting changed or wrong headers.");
 
-	size_t SourceLength = WeatherSource->size();
+	//size_t SourceLength = WeatherSource->size();
 
 	this->contentType = GetMethod;
 	if (GetMethod == WebPage::ContentType::instant)
@@ -94,19 +95,28 @@ bool Weather::get_CURL(std::string url_cURL, std::string _FileName)
 	bool fileOpen_code = fopen_s(&file, Path.c_str(), "w");
 	if (file == NULL || fileOpen_code != 0)
 	{
-		log_write(Err, std::format("Create file ({}) failed. At function \"get_CURL\" when preparing to store Weather source", Path));
+		log_write(Err, "Create file (" + Path +") failed. At function \"get_CURL\" when preparing to store Weather source");
 		return FALSE;
 	}
 	//prepare to store weather data
+
+
+	// 控制台使用
+#ifdef _CONSOLE
+
 
 	CURL* curl = curl_easy_init();
 
 	struct curl_slist* headers = NULL;
 	size_t headers_size = this->Headers.size();
 	if (headers_size != 0) {
-		for (size_t headers_i = 0; headers_i < headers_size; headers_i++) {
-			headers = curl_slist_append(headers, this->Headers[headers_i].c_str());
-			log_write(Info, "Headers -> " + this->Headers[headers_i]);
+		for (size_t headers_i = 0; headers_i < headers_size; headers_i += 2) {
+			headers = curl_slist_append(
+				headers,
+				(this->Headers[headers_i] + ':' + this->Headers[headers_i + 1]).c_str()
+			);
+
+			log_write(Info, "Headers -> " + this->Headers[headers_i] + ':' + this->Headers[headers_i + 1]);
 		}
 	}
 	//set headers
@@ -143,7 +153,7 @@ bool Weather::get_CURL(std::string url_cURL, std::string _FileName)
 
 			using WE = WeatherException::ExcptType;
 			using WA = WeatherException::AddressMethod;
-			WeatherException e(WE::curl, WA::back, "Network error.\n" + std::string(curl_easy_strerror(res_code)) );
+			WeatherException e(WE::curl, WA::back, "Network error.\n" + std::string(curl_easy_strerror(res_code)));
 			throw e;
 		}
 	}
@@ -156,6 +166,66 @@ bool Weather::get_CURL(std::string url_cURL, std::string _FileName)
 	curl_easy_cleanup(curl);
 	fclose(file);
 	/* Always clean up ! */
+
+#endif // _CONSOLE
+
+	return false;
+}
+
+bool Weather::get_HttpClient(std::string url_cURL, std::string* res)
+{
+
+#ifdef DeskTop_yc
+#include <winrt/Windows.Web.h>
+#include <winrt/Windows.Web.Http.h>
+#include <winrt/Windows.Web.Http.Headers.h>
+	using namespace winrt::Windows::Web::Http;
+
+	HttpClient client;
+
+	Headers::HttpRequestHeaderCollection headers = client.DefaultRequestHeaders();
+
+	size_t headers_size = this->Headers.size();
+	if (headers_size != 0) {
+		for (size_t headers_i = 0; headers_i < headers_size; headers_i += 2) {
+
+			headers.Append(
+				winrt::to_hstring((this->Headers)[headers_i]),
+				winrt::to_hstring((this->Headers)[headers_i + 1])
+			);   // are supposed to use try-catch
+
+			log_write(Info, "Headers -> " + this->Headers[headers_i] + ':' + this->Headers[headers_i + 1]);
+		}
+	}
+
+
+	HttpResponseMessage resMsg;
+
+
+	try
+	{
+		resMsg = client.GetAsync(
+			winrt::Windows::Foundation::Uri(
+				winrt::to_hstring(url_cURL)
+			)
+		).get();
+
+		resMsg.EnsureSuccessStatusCode();
+		*res = winrt::to_string(resMsg.Content().ReadAsStringAsync().get());
+	}
+	catch (winrt::hresult_error const& ex)
+	{
+		*res = winrt::to_string(ex.message());
+	}
+
+	if (resMsg.IsSuccessStatusCode()) return true;
+	else throw WeatherException(
+		WeatherException::ExcptType::curl,
+		WeatherException::AddressMethod::back,
+		"Response ReasonPhrase:" + winrt::to_string(resMsg.ReasonPhrase())
+	);
+
+#endif // DeskTop_yc
 
 	return false;
 }
@@ -180,7 +250,19 @@ bool Weather::get_weather(WebPage::ContentType type, WebPage* page)
 
 		std::string URL_GetLocationCode = "http://wgeo.weather.com.cn/ip/?_=" + Time;
 
-		bool res1 = get_CURL(URL_GetLocationCode, "Location.txt");
+		bool res1;
+		std::string resContent;
+
+#ifdef _CONSOLE
+		res1 = get_CURL(URL_GetLocationCode, "Location.txt");
+#endif // _CONSOLE
+
+#ifdef DeskTop_yc
+		res1 = get_HttpClient(URL_GetLocationCode, &resContent);
+#endif // DeskTop_yc
+
+
+
 		// get
 
 		if (!res1)
@@ -189,10 +271,21 @@ bool Weather::get_weather(WebPage::ContentType type, WebPage* page)
 		}
 		else
 		{
+
+#ifdef _CONSOLE
 			page->readWebPage("Location.txt",
 				WebPage::ContentType::location,
 				WebPage::DocType::JavaScript,
 				URL_GetLocationCode);
+#endif // _CONSOLE
+
+#ifdef DeskTop_yc
+			page->makeWebPage(&resContent,
+				WebPage::ContentType::location,
+				WebPage::DocType::JavaScript,
+				URL_GetLocationCode);
+#endif // DeskTop_yc
+
 			// make page
 
 
@@ -217,18 +310,39 @@ bool Weather::get_weather(WebPage::ContentType type, WebPage* page)
 		*c_fileName = Weather::Position::getPositionCode() + "_" + Time + ".txt";
 
 
-		bool res2 = get_CURL(URL_Content, *c_fileName);
+		bool res2;
+		std::string resContent;
+
+#ifdef _CONSOLE
+		res2 = get_CURL(URL_Content, *c_fileName);
+#endif // _CONSOLE
+
+#ifdef DeskTop_yc
+		res2 = get_HttpClient(URL_Content, &resContent);
+#endif // DeskTop_yc
 		// get
+
+
 
 		if (!res2) {
 			Tools::log_write(Tools::Err, "Failed to get weather infomation!");
 		}
 		else
 		{
+#ifdef _CONSOLE
 			page->readWebPage(*c_fileName,
 				WebPage::ContentType::instant,
 				WebPage::DocType::JavaScript,
 				URL_Content);
+#endif // _CONSOLE
+
+#ifdef DeskTop_yc
+			page->makeWebPage(&resContent,
+				WebPage::ContentType::instant,
+				WebPage::DocType::JavaScript,
+				URL_Content);
+#endif // DeskTop_yc
+
 
 			Tools::log_write(Tools::Info, "Getting weather infomation succeeds.");
 			return true;
@@ -252,16 +366,36 @@ bool Weather::get_weather(WebPage::ContentType type, WebPage* page)
 
 		Tools::log_write(Tools::Info, "Get warnings. URL is: " + URL_Warnings);
 
-		bool res3 = get_CURL(URL_Warnings, *w_fileName);
+		bool res3;
+		std::string resContent;
+
+#ifdef _CONSOLE
+		res3 = get_CURL(URL_Warnings, *w_fileName);
+#endif
+
+#ifdef DeskTop_yc
+		res3 = get_HttpClient(URL_Warnings, &resContent);
+#endif
+
 		if (!res3) {
 			Tools::log_write(Tools::Err, "Failed to get warnings!");
 		}
 		else
 		{
+#ifdef _CONSOLE
 			page->readWebPage(*w_fileName,
 				WebPage::ContentType::warnings,
 				WebPage::DocType::JavaScript,
 				URL_Warnings);
+#endif // _CONSOLE
+
+#ifdef DeskTop_yc
+			page->makeWebPage(&resContent,
+				WebPage::ContentType::warnings,
+				WebPage::DocType::JavaScript,
+				URL_Warnings);
+#endif // DeskTop_yc
+
 
 			Tools::log_write(Tools::Info, "Getting warnings succeeds.");
 			return true;
@@ -292,13 +426,22 @@ bool Weather::get_weather_kit(WebPage::ContentType type)
 
 void Weather::setHeaders() {
 
-	this->Headers.push_back("Accept: */*");
+	this->Headers.push_back("Accept");
+	this->Headers.push_back("*/*");
+
 	//   this->Headers.push_back("User - Agent: Mozilla / 5.0 (Windows NT 10.0; Win64; x64) AppleWebKit / 537.36 (KHTML, like Gecko) Chrome / 121.0.0.0 Safari / 537.36 Edg / 121.0.0.0");
 	//   this->Headers.push_back("Cookie: f_city=%E6%88%90%E9%83%BD%7C101270101%7C");
-	this->Headers.push_back("User-Agent:cURL yc_GetWeather/1.0.0");
-	this->Headers.push_back("Referer:http://www.Weather.com.cn/");
-	this->Headers.push_back("Connection: keep-alive");
-	this->Headers.push_back("Accept-Language: zh - CN, zh; q = 0.9, en; q = 0.8, en - GB; q = 0.7, en - US; q = 0.6");
+	this->Headers.push_back("User-Agent");
+	this->Headers.push_back("yc_GetWeather_get/1.0.0");
+
+	this->Headers.push_back("Referer");
+	this->Headers.push_back("http://www.Weather.com.cn/");
+
+	this->Headers.push_back("Connection");
+	this->Headers.push_back("keep-alive");
+
+	this->Headers.push_back("Accept-Language");
+	this->Headers.push_back("zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6");
 }
 
 std::string Weather::Position::location = "ERR",

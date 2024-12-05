@@ -5,36 +5,37 @@
 #include "Tools.h"
 #include "WeatherException.h"
 
+
 class WebPage
 {
 public:
 
 	/* 储存类型 */
-	class ContentType {
-	public:
-		/* Constructors */
-		 ContentType() : id{ count } { count++; }
+	//class ContentType {
+	//public:
+	//	/* Constructors */
+	//	ContentType() : id{ count } { count++; }
 
 
-		 /* Operators */
-		bool operator==(const ContentType& type) const { return this->id == type.id; }	//判断ContentType静态常量是否相等
-		
-
-		/* Standard */
-		static const WebPage::ContentType instant, forecast, location, warnings;	//ContentType--静态常量 声明
+	//	/* Operators */
+	//	bool operator==(const ContentType& type) const { return this->id == type.id; }	//判断ContentType静态常量是否相等
 
 
-	private:
+	//	/* Standard */
+	//	static const WebPage::ContentType instant, forecast, location, warnings;	//ContentType--静态常量 声明
 
-		short id;
-		static inline short count = 0;
 
-	};
-	
+	//private:
+
+	//	short id;
+	//	static inline short count = 0;
+
+	//};
+	enum ContentType { instant, forecast, location, warnings };
 
 
 	/* 文件格式 */
-	class DocType 
+	class DocType
 	{
 	public:
 		/* Constructors */
@@ -57,7 +58,7 @@ public:
 
 
 	/* 编码格式 未实现 */
-	class Encoding 
+	class Encoding
 	{
 	public:
 		/* Constructors */
@@ -65,7 +66,7 @@ public:
 
 
 		/* Operators */
-		bool operator==(const Encoding& type) const { return this->id == type.id; }	
+		bool operator==(const Encoding& type) const { return this->id == type.id; }
 
 
 		/* Standard */
@@ -76,14 +77,14 @@ public:
 
 		short id;
 		static inline short count = 0;
-	}; 
+	};
 
 
 
-//	void storeWebPage(WebPage* sourcePage);
+	//	void storeWebPage(WebPage* sourcePage);
 	void readWebPage(std::string fileName, ContentType contentType, DocType doctype, std::string url, Encoding encoding = Encoding::utf8);
-//	void makeWebPage(WebPage* Page, std::string source, ContentType pageType, DocType doctype, std::string url);
-	
+	void makeWebPage(std::string* source, ContentType pageType, DocType doctype, std::string url, Encoding _encoding = Encoding::utf8);
+
 	void makeContent();
 	void makeContent(std::string fileName);
 	void freeContent();
@@ -102,7 +103,7 @@ private:
 	DocType doctype;
 	Encoding encoding;
 	std::string content;
-	bool has_content_  = 0;
+	bool has_content_ = 0;
 };
 
 

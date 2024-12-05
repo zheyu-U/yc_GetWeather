@@ -5,7 +5,7 @@
 #include <exception>
 #include <string>
 
-class WeatherException : std::exception
+class WeatherException : public std::exception
 {
 public:
 	class ExcptType;
