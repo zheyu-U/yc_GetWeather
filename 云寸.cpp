@@ -4,6 +4,7 @@
 #include "weather.h"
 #include "colored_cout.h"//https://github.com/yurablok/colored-cout/
 
+using namespace yc;
 
 
 int main()
@@ -12,25 +13,24 @@ int main()
 	curl_global_init(CURL_GLOBAL_ALL);                                   //初始化cURL
 	Tools::CheckIfDataFileExists();                                     //Check whether %AppData%/yc exists and create it.
 	std::string StringCurrentTime = Tools::String_GetCurrentTime();     //gat time函数
-	Weather* weatherInstant = new Weather(WebPage::ContentType::instant);
+	Weather* weatherInstant = new Weather(Type::instant);
 
 	try
 	{
 		/*-- get location --*/
-		bool res1 = weatherInstant->get_weather_kit(WebPage::ContentType::location);
+		bool res1 = weatherInstant->get_weather_kit(Type::location);
 
 		/*-- get weather infomation --*/
-		bool res2 = weatherInstant->get_weather_kit(WebPage::ContentType::instant);
+		bool res2 = weatherInstant->get_weather_kit(Type::instant);
 
 		/*-- get warnings --*/
-		bool res3 = weatherInstant->get_weather_kit(WebPage::ContentType::warnings);
+		bool res3 = weatherInstant->get_weather_kit(Type::warnings);
 	}
-	catch (const WeatherException& e)
+	catch (const ycresult::ycresult& e)
 	{
-		Tools::log_write(Tools::Err, e.errView());
+		Tools::log_write(Tools::Err, e.what());
 
-		using A = WeatherException::AddressMethod;
-		if (e.get_AddressMethod() == A::back || e.get_AddressMethod() == A::crash )
+		if (e.get_AddressMethod() == ycresult::AddressMethod::back || e.get_AddressMethod() == ycresult::AddressMethod::crash )
 		{
 			Tools::log_write(Tools::Err, "Now crash.");
 			exit(1);

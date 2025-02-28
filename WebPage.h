@@ -6,108 +6,65 @@
 #include "WeatherException.h"
 
 
-class WebPage
-{
-public:
+namespace yc {
 
 	/* 储存类型 */
-	//class ContentType {
-	//public:
-	//	/* Constructors */
-	//	ContentType() : id{ count } { count++; }
+	enum class Type { instant, forecast, location, warnings };
 
+	namespace WebPage {
 
-	//	/* Operators */
-	//	bool operator==(const ContentType& type) const { return this->id == type.id; }	//判断ContentType静态常量是否相等
+		/* 文件格式 */
+		enum class DocType { html, JavaScript };
 
+		/* 编码格式 未实现 */
+		enum class Encoding { utf8, gbk };
 
-	//	/* Standard */
-	//	static const WebPage::ContentType instant, forecast, location, warnings;	//ContentType--静态常量 声明
+		class WebPage
+		{
+		public:
 
+			
+			//	void storeWebPage(WebPage* sourcePage);
+			void read(std::string fileName, Type contentType, DocType doctype, std::string url, Encoding encoding = Encoding::utf8);
+			void make(std::string* source, Type pageType, DocType doctype, std::string url, Encoding _encoding = Encoding::utf8);
 
-	//private:
+			void freeContent();
 
-	//	short id;
-	//	static inline short count = 0;
+			// 只应在 freeContent() 后，需要内容时调用
+			void makeContent();
+			void makeContent(std::string fileName);
 
-	//};
-	enum ContentType { instant, forecast, location, warnings };
+			/* Accessors */
+			std::string get_url() const { return url; };
+			Type get_contenttype() const { return contenttype; }
+			Encoding get_encoding() const { return encoding; }
+			std::string* get_content_p();
+			bool has_content() const { return has_content_; }
 
+		private:
+			
 
-	/* 文件格式 */
-	class DocType
-	{
-	public:
-		/* Constructors */
-		DocType() : id{ count } { count++; }
+			std::string fileName;
+			std::string url;
+			Type contenttype;
+			DocType doctype;
+			Encoding encoding;
+			std::string content;
+			bool has_content_ = 0;
+		};
 
-		/* Operators */
-		bool operator==(const DocType& type) const { return this->id == type.id; }
+		// 在类外提供生成WebPage的接口
+		//	void storeWebPage(WebPage* sourcePage);
+		static void readWebPage(WebPage& webpage, std::string fileName, Type contentType, DocType doctype, std::string url, Encoding encoding = Encoding::utf8) {
+			webpage.read(fileName, contentType, doctype, url, encoding);
+		}
+		static void makeWebPage(WebPage webpage, std::string* source, Type pageType, DocType doctype, std::string url, Encoding _encoding = Encoding::utf8) {
+			webpage.make(source, pageType, doctype, url, _encoding);
+		}
 
-
-		/* Standard */
-		static const WebPage::DocType html, JavaScript;
-
-
-	private:
-
-		short id = 0;
-		static inline short count = 0;
-
-	};
-
-
-	/* 编码格式 未实现 */
-	class Encoding
-	{
-	public:
-		/* Constructors */
-		Encoding() : id{ count } { count++; }
-
-
-		/* Operators */
-		bool operator==(const Encoding& type) const { return this->id == type.id; }
-
-
-		/* Standard */
-		static const WebPage::Encoding utf8, gbk;
-
-
-	private:
-
-		short id;
-		static inline short count = 0;
-	};
-
-
-
-	//	void storeWebPage(WebPage* sourcePage);
-	void readWebPage(std::string fileName, ContentType contentType, DocType doctype, std::string url, Encoding encoding = Encoding::utf8);
-	void makeWebPage(std::string* source, ContentType pageType, DocType doctype, std::string url, Encoding _encoding = Encoding::utf8);
-
-	void makeContent();
-	void makeContent(std::string fileName);
-	void freeContent();
-
-	/* Accessors */
-	std::string get_url() const { return url; };
-	ContentType get_contenttype() const { return contenttype; }
-	Encoding get_encoding() const { return encoding; }
-	std::string* get_content_p();
-	bool has_content() const { return has_content_; }
-
-private:
-	std::string fileName;
-	std::string url;
-	ContentType contenttype;
-	DocType doctype;
-	Encoding encoding;
-	std::string content;
-	bool has_content_ = 0;
-};
-
-
+	}
+}
 //定义静态常量
-//constexpr WebPage::ContentType instant, forecast, location, warnings;
+//constexpr WebPage::Type instant, forecast, location, warnings;
 #endif // !_WEBPAGE_
 

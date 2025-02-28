@@ -16,50 +16,50 @@
 #include <vector>
 #include <windows.h>
 
-class Weather
-{
-public:
-	Weather() :Time{ Tools::String_GetCurrentTime() } { setHeaders(); };
-	Weather(WebPage::ContentType ct, std::string location, std::string locationCode) : contentType{ ct }, Location{ location }, LocationCode{ locationCode }, Time{ Tools::String_GetCurrentTime() } { setHeaders(); };
-	Weather(WebPage::ContentType ct) :contentType{ ct }, Time{ Tools::String_GetCurrentTime() } { setHeaders(); };
+namespace yc {
 
-	WebPage::ContentType contentType;
-	std::string Location, LocationCode, PublicIP, CurrentTem, MaxTem, MinTem, UpdateTime, CurrentDate, CurrentWeekday, CurrentAQI, CurrentWind_Direction, CurrentWind_speed, CurrentWeather, CurrentRainfall, Rainfall24, Warnings;
-	std::vector<std::string> Headers;
-
-
-	void analysis(class WebPage* page);
-	bool get_CURL(std::string url_cURL, std::string _FName);
-	bool get_HttpClient(std::string url_cURL, std::string *res);
-	bool get_weather(WebPage::ContentType type, WebPage* page);
-	bool get_weather_kit(WebPage::ContentType type);
-
-	void setupTime() { Time = Tools::String_GetCurrentTime(); }
-
-	/* 位置 */
-	class Position
+	class Weather
 	{
 	public:
+		Weather() :Time{ Tools::String_GetCurrentTime() } { setHeaders(); };
+		Weather(Type ct, std::string location, std::string locationCode) : contentType{ ct }, Location{ location }, LocationCode{ locationCode }, Time{ Tools::String_GetCurrentTime() } { setHeaders(); };
+		Weather(Type ct) :contentType{ ct }, Time{ Tools::String_GetCurrentTime() } { setHeaders(); };
 
-		Position() = default;
-		Position(std::string lct, std::string cd) { location = lct; code = cd; }
+		Type contentType;
+		std::string Location, LocationCode, PublicIP, CurrentTem, MaxTem, MinTem, UpdateTime, CurrentDate, CurrentWeekday, CurrentAQI, CurrentWind_Direction, CurrentWind_speed, CurrentWeather, CurrentRainfall, Rainfall24, Warnings;
+		std::vector<std::string> Headers;
+
+
+		void analysis(WebPage::WebPage* page);
+		bool get_CURL(std::string url_cURL, std::string _FName);
+		bool get_HttpClient(std::string url_cURL, std::string* res);
+		bool get_weather(Type type, WebPage::WebPage* page);
+		bool get_weather_kit(Type type);
+
+		void setupTime() { Time = Tools::String_GetCurrentTime(); }
+
+	private:
+
+		void setHeaders();  //构造时自动设置
+		bool ReadQuoteContent(std::string* FromWhat, std::string What, std::string* ToWhat);
+
+		std::string Time;
+	};
+
+
+
+	/* 位置 */
+	namespace Position {
+
+		//static std::string location, code;
+		static std::string location = "ERR", code = "ERR";
+
+
+		static void Position(std::string lct, std::string cd) { location = lct; code = cd; }
 
 		static void setPosition(std::string m_location, std::string m_code) { location = m_location; code = m_code; }
 		static std::string getPosition() { return location; }
 		static std::string getPositionCode() { return code; }
-
-	private:
-
-		static std::string location, code;
-
-	};
-
-private:
-
-	void setHeaders();  //构造时自动设置
-	bool ReadQuoteContent(std::string* FromWhat, std::string What, std::string* ToWhat);
-
-	std::string Time;
-};
-
+	}
+}
 #endif // !_WEATHER_H_

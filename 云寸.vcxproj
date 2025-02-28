@@ -71,20 +71,20 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>D:\code\tools;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\code\tools\curl\builds\libcurl-vc17-x64-release-static-ipv6-sspi-schannel\include;D:\code\tools\curl-8.6.0\builds\libcurl-vc17-x64-debug-static-ipv6-sspi-schannel\include</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);D:\code\tools\curl\builds\libcurl-vc17-x64-debug-static-ipv6-sspi-schannel\lib</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);curl_include_lib\libcurl-vc17-x64-debug-static-ipv6-sspi-schannel\include</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);curl_include_lib\libcurl-vc17-x64-debug-static-ipv6-sspi-schannel\lib</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>D:\code\tools;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\code\tools\curl\builds\libcurl-vc17-x64-release-static-ipv6-sspi-schannel\include</IncludePath>
-    <LibraryPath>D:\code\tools\curl\builds\libcurl-vc17-x64-release-static-ipv6-sspi-schannel\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);curl_include_lib\libcurl-vc17-x64-release-static-ipv6-sspi-schannel\include</IncludePath>
+    <LibraryPath>curl_include_lib\libcurl-vc17-x64-release-static-ipv6-sspi-schannel\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>D:\code\tools;D:\code\tools\curl\builds\libcurl-vc17-x86-release-static-ipv6-sspi-schannel\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath>D:\code\tools\curl\builds\libcurl-vc17-x86-release-static-ipv6-sspi-schannel\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <IncludePath>curl_include_lib\libcurl-vc17-x86-release-static-ipv6-sspi-schannel\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <LibraryPath>curl_include_lib\libcurl-vc17-x86-release-static-ipv6-sspi-schannel\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>D:\code\tools;D:\code\tools\curl\builds\libcurl-vc17-x86-release-static-ipv6-sspi-schannel\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);D:\code\tools\curl\builds\libcurl-vc17-x86-release-static-ipv6-sspi-schannel\lib</LibraryPath>
+    <IncludePath>curl_include_lib\libcurl-vc17-x86-release-static-ipv6-sspi-schannel\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(IncludePath)</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);curl_include_lib\libcurl-vc17-x86-release-static-ipv6-sspi-schannel\lib</LibraryPath>
     <AllProjectIncludesArePublic>true</AllProjectIncludesArePublic>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -174,6 +174,7 @@
   <ItemGroup>
     <ClInclude Include="colored_cout.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="resource1.h" />
     <ClInclude Include="Tools.h" />
     <ClInclude Include="weather.h" />
@@ -181,10 +182,13 @@
     <ClInclude Include="WebPage.h" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="云寸1.rc" />
+    <None Include="doc\yc_weather.md" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="icon1.ico" />
+    <Image Include="Assets\icon256.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="云寸.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

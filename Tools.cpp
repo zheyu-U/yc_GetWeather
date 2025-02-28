@@ -38,15 +38,16 @@ std::string Tools::getRoamingAppDataPath() {
 //读文件
 void Tools::readFileIntoString(std::string Path, std::string* str)
 {
+	using namespace yc::ycresult;
 	std::ifstream file;
 	file.open(Path, std::ios::in);
 	if (file.is_open() == false) {
-		throw WeatherException(WeatherException::ExcptType::file, WeatherException::AddressMethod::back, "Cannot open the file!");
+		throw ycresult(ExcptType::file, AddressMethod::back, "Cannot open the file!");
 	}
 	//open
 
 	size_t cnt = file.gcount();
-	if (cnt >= 655'360) throw WeatherException(WeatherException::ExcptType::content_too_long, WeatherException::AddressMethod::back, WeatherException::ExcptType::content_too_long.view);
+	if (cnt >= 655'360) throw ycresult(ExcptType::content_too_long, AddressMethod::back, "file is too big!");
 	//check size
 	//ref https://cplusplus.com/reference/fstream/ifstream/
 
