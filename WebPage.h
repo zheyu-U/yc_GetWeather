@@ -10,6 +10,15 @@ namespace yc {
 
 	/* 储存类型 */
 	enum class Type { instant, forecast, location, warnings };
+	static std::string return_string(Type t) {
+		switch (t) {
+		case Type::instant: return "instant";
+		case Type::forecast: return "forecast";
+		case Type::location: return "location";
+		case Type::warnings: return "warnings";
+		default: return "unknown";
+		}
+	}
 
 	namespace WebPage {
 

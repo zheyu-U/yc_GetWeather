@@ -44,6 +44,28 @@ namespace yc::ycresult {
 			return method;
 		}
 
+		const std::string return_string_ExcptType() const noexcept {
+			switch (type) {
+			case ExcptType::content_too_long: return "The content is out of length.";
+			case ExcptType::content_not_found: return "Cannot find the required content.";
+			case ExcptType::file: return "File error.";
+			case ExcptType::curl: return "Curl error.";
+			case ExcptType::invalid_formatting: return "Unknown formatting.";
+			default: return "Unknown error.";
+			}
+		}
+
+		const std::string return_string_AddressMethod() const noexcept {
+			switch (method) {
+			case AddressMethod::normal: return "Normal.";
+			case AddressMethod::implicit: return "Implicit.";
+			case AddressMethod::back: return "Back.";
+			case AddressMethod::crash: return "Crash.";
+			default: return "Unknown.";
+			}
+		}
+
+
 	private:
 
 		std::string message;

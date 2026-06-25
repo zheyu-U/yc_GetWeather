@@ -12,6 +12,7 @@ int main()
 	SetConsoleOutputCP(CP_UTF8);                                         //PREPARATIONS           cout控制台中文乱码问题 在 visual studio的项目属性 -> 配置属性 -> c/c++ -> 命令行 -> 其它选项 中填写 /utf-8  ref->https://learn.microsoft.com/zh-cn/cpp/build/reference/utf-8-set-source-and-executable-character-sets-to-utf-8?view=msvc-170
 	curl_global_init(CURL_GLOBAL_ALL);                                   //初始化cURL
 	Tools::CheckIfDataFileExists();                                     //Check whether %AppData%/yc exists and create it.
+	Tools::InitLogSystem();                                            //启动异步日志系统：创建 log/ 子目录并开启后台刷写线程
 	std::string StringCurrentTime = Tools::String_GetCurrentTime();     //gat time函数
 	Weather* weatherInstant = new Weather(Type::instant);
 
@@ -21,18 +22,27 @@ int main()
 		bool res1 = weatherInstant->get_weather_kit(Type::location);
 
 		/*-- get weather infomation --*/
-		bool res2 = weatherInstant->get_weather_kit(Type::instant);
+		if(res1)bool res2 = weatherInstant->get_weather_kit(Type::instant);
 
 		/*-- get warnings --*/
-		bool res3 = weatherInstant->get_weather_kit(Type::warnings);
+		if (res1)bool res3 = weatherInstant->get_weather_kit(Type::warnings);
+
+		if(!res1){
+			Tools::log_write(Tools::Err, "Failed to get location!", "main");
+				throw ycresult::ycresult(ycresult::ExcptType::curl, ycresult::AddressMethod::back, "Failed to get location.");
+		}
 	}
 	catch (const ycresult::ycresult& e)
 	{
-		Tools::log_write(Tools::Err, e.what());
+		Tools::log_write(Tools::Err, e.what(), "main");
 
 		if (e.get_AddressMethod() == ycresult::AddressMethod::back || e.get_AddressMethod() == ycresult::AddressMethod::crash )
 		{
-			Tools::log_write(Tools::Err, "Now crash.");
+			Tools::log_write(Tools::FErr, "Now crash.", "main");
+#ifdef _DEBUG
+			system("pause");
+#endif
+			Tools::ShutdownLogSystem();                                //停止异步日志系统：确保崩溃前的日志已落盘
 			exit(1);
 		}
 	}
@@ -44,8 +54,8 @@ int main()
 	{
 #ifdef _DEBUG
 		system("pause");
-		system("cls");
 #endif // _DEBUG
+		system("cls");
 		std::cout << "更新日期:" << clr::white << weatherInstant->CurrentDate << " " << weatherInstant->UpdateTime << clr::reset << std::endl;
 		std::cout << "城市:" << clr::green << weatherInstant->Location << clr::reset << "\n实时精准气温:" << clr::green << weatherInstant->CurrentTem << "℃    " << clr::reset;
 		std::cout << "实时天气:" << clr::green << weatherInstant->CurrentWeather << clr::reset << std::endl;
@@ -61,6 +71,7 @@ int main()
 		std::cout << "更多请访问 " << clr::cyan << "http://www.weather.com.cn/\n" << clr::reset;
 	}
 	system("pause");
+	Tools::ShutdownLogSystem();                                        //停止异步日志系统：写入结束标记并等待后台线程完成刷写
 	return 0;
 }
 

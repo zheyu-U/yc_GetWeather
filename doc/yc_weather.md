@@ -12,6 +12,11 @@
 ## <a id="yc">云寸介绍</a>  
 
 
+### 工作逻辑  
+初始化程序，包括 `curl_global_init(CURL_GLOBAL_ALL)`  
+天气信息储存在 **Weather** 类中，所以首先需要用 **Weather** 类创建变量。  
+get_weather_kit(Type) 是最简易的获取天气的方法。
+
 ## <a id="WebPage">WebPage介绍</a> 
 
 ###  WebPage类 
@@ -20,8 +25,9 @@ WebPage 是用于储存网页文件的类。
 
 #### 方法  
 
-#####  
-   	void readWebPage(std::string fileName, Type contentType, DocType doctype, std::string url, Encoding encoding = Encoding::utf8);  
+``` c++  
+void readWebPage(std::string fileName, Type contentType, DocType doctype, std::string url, Encoding encoding = Encoding::utf8);  
+```
 
 从文件中读取，转化为WebPage  
 **fileName**: 文件相对于 DataPath(...\yc\)的路径  
@@ -30,18 +36,26 @@ WebPage 是用于储存网页文件的类。
 **url**: 网页网址  
 **encoding**: 文件编码格式  
 
-#####  
-	void makeWebPage(std::string* source, Type pageType, DocType doctype, std::string url, Encoding _encoding = Encoding::utf8);  
+---
+
+``` c++  
+void makeWebPage(std::string* source, Type pageType, DocType doctype, std::string url, Encoding _encoding = Encoding::utf8);  
+```
 
 从string中读取，转化为WebPage  
 
-#####  
-	void makeContent();  
-	void makeContent(std::string fileName); 
-	
+---
+
+``` c++  
+void makeContent();  
+void makeContent(std::string fileName); 
+```
 只应在 freeContent() 释放内存后，需要内容时调用。
 
-#####  
-	void freeContent();   
+---
+
+``` c++  
+void freeContent();   
+```
 清空网页内容，释放内存。  
 *注意*：又需要WebPage内容时请调用 makeContent()。  

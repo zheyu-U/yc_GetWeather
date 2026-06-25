@@ -84,137 +84,6 @@ namespace {
 
 } // anonymous namespace
 
-// 内部辅助：入队并通知（线程安全）
-namespace {
-	void enqueueLogLine(const std::string& line)
-	{
-		if (!logSystemRunning.load(std::memory_order_acquire))
-			return;
-		{
-			std::lock_guard<std::mutex> lock(logMutex);
-			logQueue.push(line);
-		}
-		logCV.notify_one();
-	}
-
-
-	// 统一实现：控制台输出 + 将主行、Info 行、Call 行按顺序入队写入文件
-	// 没有声明
-	void log_write_impl(int lvl, const std::string& writelog, const std::string& region,
-		const Tools::InfoSet* info = nullptr,
-		const std::vector<std::string>* call = nullptr)
-	{
-		auto now = std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now());
-		std::string time_ = std::format("{:%F %H:%M:%S}", now);
-
-		// 级别标签
-		std::string loglvl = "";
-		switch (lvl)
-		{
-		// loglvl 长度不要超过10个字符。由于在下方进行格式化输出
-		case Tools::Err:   loglvl = "[ERROR]";       break;
-		case Tools::Warn:  loglvl = "[WARNING]";     break;
-		case Tools::Info:  loglvl = "[INFO]";        break;
-		case Tools::FErr:  loglvl = "[FTL ERROR]"; break;
-		default:    loglvl = "[UNKNOWN]";     break;
-		}
-		std::string StampOutline = std::format("{:<19} {:>11}", time_, loglvl);
-		// GetEachString(i)中有 format 长度应为 上方长度之和+2
-
-
-		// 文件写入（入队保证顺序）
-		if (logSystemRunning.load(std::memory_order_acquire))
-		{
-			// 主行
-			std::string fileMain = StampOutline;
-			if (!region.empty()) fileMain += " |[" + region + "]| ";
-			fileMain += writelog;
-
-			{
-				std::lock_guard<std::mutex> lock(logMutex);
-				logQueue.push(std::move(fileMain));
-
-				if (info)
-				{
-					std::string infoLine = StampOutline + " |[INFOSET]| " + info->ToString();
-					logQueue.push(std::move(infoLine));
-					for (int i = 0; i < info->size(); i++)
-					{
-						logQueue.push(std::move(info->GetEachString(i)));
-					}
-				}
-
-				if (call && !call->empty())
-				{
-					std::string callLine = StampOutline + " |[CALLSTACK]| ";
-					for (size_t i = 0; i < call->size(); ++i)
-					{
-						if (i) callLine += " <- ";
-						callLine += (*call)[i];
-					}
-					logQueue.push(std::move(callLine));
-				}
-			}
-			logCV.notify_one();
-		}
-
-
-		// 控制台输出
-#ifdef _CONSOLE
-		clr colorShow = clr::on_red;
-		switch (lvl)
-		{
-		case Tools::Err:   colorShow = clr::red;     break;
-		case Tools::Warn:  colorShow = clr::yellow;  break;
-		case Tools::Info:  colorShow = clr::green;   break;
-		case Tools::FErr:  colorShow = clr::on_red;  break;
-		default:    colorShow = clr::blue;    break;
-		}
-
-
-		// 控制台输出
-#ifndef _DEBUG           // Release 模式下，Info 级别不显示在控制台
-		if (colorShow != clr::green)
-		{
-			std::cout << colorShow << StampOutline << clr::reset;
-			if (!region.empty()) std::cout << clr::white << " |[" + region + "]| " << clr::reset;
-			std::cout << writelog << std::endl;
-		}
-#endif
-
-#ifdef _DEBUG
-		std::cout << colorShow << StampOutline << clr::reset;
-		if (!region.empty()) std::cout << clr::white << " |[" + region + "]| " << clr::reset;
-		std::cout << writelog << std::endl;
-#endif
-
-		// Info 行与 Call 行的控制台显示
-		if (info)
-		{
-			std::cout << colorShow << StampOutline << clr::white << " |[INFOSET]| " << clr::reset  << std::endl;
-			for (int i = 0; i < info->size(); i++)
-			{
-				std::cout <<info->GetEachString(i)<< std::endl;
-			}
-		}
-
-		if (call && !call->empty())
-		{
-			std::string joined;
-			for (size_t i = 0; i < call->size(); ++i)
-			{
-				if (i) joined += " <- ";
-				joined += (*call)[i];
-			}
-			std::cout << colorShow << StampOutline << clr::white << " |[CALLSTACK]| " << clr::reset << joined << std::endl;
-		}
-#endif // _CONSOLE
-
-		
-	}
-
-} // internal anonymous namespace
-
 
 //获取 LocalAppDataPath    >>Reference:https://zhuanlan.zhihu.com/p/529344650
 //<shlobj.h>
@@ -270,16 +139,95 @@ void Tools::readFileIntoString(std::string Path, std::string* str)
 }
 
 void Tools::log_write(int lvl, std::string writelog, std::string region, InfoSet info, std::vector<std::string> call) {
-	log_write_impl(lvl, writelog, region, &info, &call);
+	Tools::log_write(lvl, writelog, region);
 }
 
 void Tools::log_write(int lvl, std::string writelog, std::string region, InfoSet info) {
-	log_write_impl(lvl,  writelog, region, &info);
+	Tools::log_write(lvl,  writelog, region);
 }
 
 void Tools::log_write(int lvl, std::string writelog, std::string region)
 {
-	log_write_impl(lvl, writelog, region, nullptr, nullptr);
+
+	//auto flt = now.time_since_epoch().count() % (std::micro::den * 10);
+	//auto time_ = std::format("{:%F %H:%M:%S}.{:01d} ", now_, flt / 1000000);
+
+	auto now = std::chrono::floor<std::chrono::seconds>(
+		std::chrono::system_clock::now());
+	std::string time_ = std::format(
+		"{:%F %H:%M:%S}",
+		now);
+
+
+
+	// ---- 级别标签（控制台和文件共用） ----
+	std::string loglvl;
+	switch (lvl)
+	{
+	case Err:   loglvl = "[ERROR]";       break;
+	case Warn:  loglvl = "[WARNING]";     break;
+	case Info:  loglvl = "[INFO]";        break;
+	case FErr:  loglvl = "[FATAL ERROR]"; break;
+	default:    loglvl = "[UNKNOWN]";     break;
+	}
+	loglvl.insert(0, time_);
+
+#ifdef _CONSOLE  //控制台程序使用
+
+	clr colorShow = clr::on_red;
+	switch (lvl)
+	{
+	case Err:   colorShow = clr::red;     break;
+	case Warn:  colorShow = clr::yellow;  break;
+	case Info:  colorShow = clr::green;   break;
+	case FErr:  colorShow = clr::on_red;  break;
+	default:    colorShow = clr::blue;    break;
+	}
+
+#ifndef _DEBUG  //display when not debug 调试时才显示	
+	if (colorShow != clr::green)
+	{
+		std::cout << colorShow << loglvl << clr::reset;
+		if (!region.empty())
+		{
+			std::cout << clr::white << " |[" + region + "]| " << clr::reset;
+		}
+		std::cout << writelog << std::endl;
+	}
+#endif // !_DEBUG
+
+#ifdef _DEBUG  //display when debug 调试时才显示	
+	std::cout << colorShow << loglvl << clr::reset;
+	if (!region.empty())
+	{
+		std::cout << clr::white << " |[" + region + "]| " << clr::reset;
+	}
+	std::cout << writelog << std::endl;
+#endif // _DEBUG
+
+#endif // _CONSOLE
+
+	// ---- 文件写入（异步队列，独立于 _CONSOLE 宏） ----
+	// logSystemRunning 由 InitLogSystem() 设为 true，未初始化时跳过，防止崩溃
+	if (logSystemRunning.load(std::memory_order_acquire))
+	{
+		// 构建无颜色码的纯文本行，格式与控制台输出一致
+		// 格式: "2025-03-29 14:30:15.3 [INFO] |[Region]| message"
+		std::string fileLine = loglvl;   // 已含时间戳 + 级别标签
+		if (!region.empty())
+		{
+			fileLine += " |[" + region + "]| ";
+		}
+		fileLine += writelog;
+
+		// 入队：加锁 push + notify，不阻塞主逻辑
+		{
+			std::lock_guard<std::mutex> lock(logMutex);
+			logQueue.push(std::move(fileLine));
+		}
+		logCV.notify_one();   // 唤醒后台线程准备刷写
+	}
+
 }
 
 
@@ -353,7 +301,7 @@ void Tools::InitLogSystem()
 	// ---- 4. 写入会话启动标记 ----
 	// 方便在日志文件中区分不同运行实例
 	std::string startLine = std::format(
-		"{:%F %H:%M:%S}    [SYSTEM]  ======== Session Start (v{}) ========",
+		"{:%F %H:%M:%S}[SYSTEM] ======== Session Start (v{}) ========",
 		nowSec, YC_GETWEATHER_CORE_VERSION);
 	logFileStream << startLine << '\n';
 	logFileStream.flush();  // 立即落盘，确保启动标记不丢失
@@ -363,7 +311,7 @@ void Tools::InitLogSystem()
 	logSystemRunning.store(true);
 
 	// 直接输出到 cout（此时日志系统刚启动，用 log_write 也可，但避免对自身产生依赖）
-	log_write(Info, "Log system starts. ", "Tools::InitLogSystem", { {"log path", logFilePath}});
+	std::cout << "[SYSTEM] Log file: " << logFilePath << '\n';
 }
 
 
@@ -386,7 +334,7 @@ void Tools::ShutdownLogSystem()
 		auto now = std::chrono::floor<std::chrono::seconds>(
 			std::chrono::system_clock::now());
 		std::string endLine = std::format(
-			"{:%F %H:%M:%S}    [SYSTEM]  ======== Session End ========",
+			"{:%F %H:%M:%S}[SYSTEM] ======== Session End ========",
 			now);
 		logQueue.push(std::move(endLine));
 	}
@@ -442,42 +390,6 @@ std::string Tools::InfoSet::ToString() const
 		out += d.getKey();
 	}
 	return out;
-}
-
-std::string Tools::InfoSet::GetEachString(int len) const noexcept
-{
-	try
-	{
-		if (len >= 0 && len < details_.size())
-		{
-			std::string out = std::format("{:>32}: {:<}", details_[len].getName() + " ", details_[len].getKey());
-			return out;
-		}
-		else
-		{
-			log_write(Err, "GetEachString() index out of range. Developer must check the code. Pay attention as it might be called by the inline log system!",
-				"Tools::InfoSet::GetEachString",
-				{
-					{"call index", std::to_string(len) },
-					{ "actual size", std::to_string(details_.size())}
-				}
-			);
-			return std::string();
-		}
-	}
-	catch (const std::exception& e)
-	{
-		log_write(Err, "GetEachString() exception caught. . Developer must check the code. Pay attention as it might be called by the inline log system!",
-			"Tools::InfoSet::GetEachString",
-			{
-			{"exception", e.what() },
-			{ "call index", std::to_string(len) },
-			{ "actual size", std::to_string(details_.size()) }
-		});
-		return std::string();
-	}
-	
-	
 }
 
 
