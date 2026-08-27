@@ -154,6 +154,15 @@ namespace {
 					}
 					logQueue.push(std::move(callLine));
 				}
+				else if (lvl >= 12) // 错误级别日志没有 call stack 时，补充。
+				{
+					logQueue.push(std::move(
+						StampOutline + 
+						" |[CALLSTACK]| \n" + 
+						std::format("{}", std::stacktrace::current())
+					));
+				}
+				
 			}
 			logCV.notify_one();
 		}
@@ -208,6 +217,11 @@ namespace {
 			}
 			std::cout << colorShow << StampOutline << clr::white << " |[CALLSTACK]| " << clr::reset << joined << std::endl;
 		}
+		else if (lvl >= 12) // 错误级别日志没有 call stack 时，补充。
+		{
+			std::cout << colorShow << StampOutline << clr::white << " |[CALLSTACK]| \n" << clr::reset << std::format("{}", std::stacktrace::current()) << std::endl;
+		}
+		
 #endif // _CONSOLE
 
 		
@@ -270,15 +284,18 @@ void Tools::readFileIntoString(std::string Path, std::string* str)
 }
 
 void Tools::log_write(int lvl, std::string writelog, std::string region, InfoSet info, std::vector<std::string> call) {
+	// if (region == "") region = std::source_location::current().function_name();       useless code. output log_write().
 	log_write_impl(lvl, writelog, region, &info, &call);
 }
 
 void Tools::log_write(int lvl, std::string writelog, std::string region, InfoSet info) {
+	// if (region == "") region = std::source_location::current().function_name();
 	log_write_impl(lvl,  writelog, region, &info);
 }
 
 void Tools::log_write(int lvl, std::string writelog, std::string region)
 {
+	// if (region == "") region = std::source_location::current().function_name();
 	log_write_impl(lvl, writelog, region, nullptr, nullptr);
 }
 
@@ -330,7 +347,7 @@ void Tools::InitLogSystem()
 		if (!std::filesystem::create_directories(logPath))
 		{
 			// 目录创建失败属于严重问题，抛出异常交由上层处理
-			throw ycresult(ExcptType::file, AddressMethod::back,
+			throw ycresult(ExcptType::file, AddressMethod::crash,
 				"Failed to create log directory: " + logDir);
 		}
 	}

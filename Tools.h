@@ -26,6 +26,8 @@
 #include <atomic>
 #include <initializer_list>
 #include <vector>
+#include <source_location>    // for debug info
+#include <stacktrace>
 
 namespace Tools
 {
@@ -34,7 +36,7 @@ namespace Tools
 	// 必须使用 Get_DataLocation()获取。
 	// e.g. C:\Users\username\AppData\Roaming\yc   末尾不带斜杠
 
-	static const int Err{ 10 }, Warn{ 11 }, Info{ 12 }, FErr{ 13 };
+	static const int Err{ 12 }, Warn{ 11 }, Info{ 10 }, FErr{ 13 };
 
 
 	std::string getRoamingAppDataPath();                                           // 获取 data储存目录
@@ -74,7 +76,7 @@ namespace Tools
 
 	void log_write(int lvl, std::string writelog, std::string region, InfoSet info, std::vector<std::string> call);
 	void log_write(int lvl, std::string writelog, std::string region, InfoSet info);
-	void log_write(int lvl, std::string writelog,std::string region);
+	void log_write(int lvl, std::string writelog, std::string region = std::source_location::current().function_name());
 	//void __IN_log_write(int lvl, std::string writelog);
 	// log_write 在开发中
 
