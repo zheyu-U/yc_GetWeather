@@ -64,7 +64,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="doc\yc_weather.md" />
+    <None Include="doc\Overview.md" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\icon256.ico">
