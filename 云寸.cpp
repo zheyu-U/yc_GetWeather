@@ -19,17 +19,17 @@ int main()
 	try
 	{
 		/*-- get location --*/
-		bool res1 = weatherInstant->get_weather_kit(Type::location);
+		std::expected<bool, Tools::SimpleError> res1 = weatherInstant->get_weather_kit(Type::location);
 
 		/*-- get weather infomation --*/
-		if(res1)bool res2 = weatherInstant->get_weather_kit(Type::instant);
+		if (res1.value_or(false)) std::expected<bool, Tools::SimpleError> res2 = weatherInstant->get_weather_kit(Type::instant);
 
 		/*-- get warnings --*/
-		if (res1)bool res3 = weatherInstant->get_weather_kit(Type::warnings);
+		if (res1.value_or(false)) std::expected<bool, Tools::SimpleError> res3 = weatherInstant->get_weather_kit(Type::warnings);
 
-		if(!res1){
+		if(!(res1.value_or(false))){
 			Tools::log_write(Tools::Err, "Failed to get location!", "main");
-				throw ycresult::ycresult(ycresult::ExcptType::curl, ycresult::AddressMethod::back, "Failed to get location.");
+			throw ycresult::ycresult(ycresult::ExcptType::curl, ycresult::AddressMethod::back, "Failed to get location. Details : " + res1.error_or(Tools::SimpleError()).SimpleDetails() );
 		}
 	}
 	catch (const ycresult::ycresult& e)

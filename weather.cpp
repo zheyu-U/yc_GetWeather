@@ -25,13 +25,13 @@ namespace yc {
 		if (GetMethod == Type::instant)
 		{
 			if (!ReadQuoteContent(WeatherSource, "cityname", &this->Location)) throw ycresult::ycresult(ET::content_not_found, AM::back, "cityname");
-			if (!ReadQuoteContent(WeatherSource, "temp\"", &this->CurrentTem)) throw ycresult::ycresult(ET::content_not_found, AM::back, "temp\"");
+			if (!ReadQuoteContent(WeatherSource, "temp\"", &this->CurrentTem)) throw ycresult::ycresult(ET::content_not_found, AM::back, "temp");
 			if (!ReadQuoteContent(WeatherSource, "WD", &this->CurrentWind_Direction)) throw ycresult::ycresult(ET::content_not_found, AM::back, "WD");
 			if (!ReadQuoteContent(WeatherSource, "WS", &this->CurrentWind_speed)) throw ycresult::ycresult(ET::content_not_found, AM::back, "WS");
-			if (!ReadQuoteContent(WeatherSource, "weather\"", &this->CurrentWeather)) throw ycresult::ycresult(ET::content_not_found, AM::back, "weather\"");
-			if (!ReadQuoteContent(WeatherSource, "aqi\"", &this->CurrentAQI)) throw ycresult::ycresult(ET::content_not_found, AM::back, "aqi\"");
-			if (!ReadQuoteContent(WeatherSource, "time\"", &this->UpdateTime)) throw ycresult::ycresult(ET::content_not_found, AM::back, "time\"");
-			if (!ReadQuoteContent(WeatherSource, "date\"", &this->CurrentDate)) throw ycresult::ycresult(ET::content_not_found, AM::back, "date\"");
+			if (!ReadQuoteContent(WeatherSource, "weather\"", &this->CurrentWeather)) throw ycresult::ycresult(ET::content_not_found, AM::back, "weather");
+			if (!ReadQuoteContent(WeatherSource, "aqi\"", &this->CurrentAQI)) throw ycresult::ycresult(ET::content_not_found, AM::back, "aqi");
+			if (!ReadQuoteContent(WeatherSource, "time\"", &this->UpdateTime)) throw ycresult::ycresult(ET::content_not_found, AM::back, "time");
+			if (!ReadQuoteContent(WeatherSource, "date\"", &this->CurrentDate)) throw ycresult::ycresult(ET::content_not_found, AM::back, "date");
 			
 			if (CurrentWind_speed == "0级")
 			{
@@ -89,7 +89,7 @@ namespace yc {
 	//https://blog.csdn.net/MOU_IT/article/details/96457666
 	//https://everything.curl.dev/examples/get
 	//URL ,file name, headers
-	bool Weather::get_CURL(std::string url_cURL, std::string _FileName)
+	std::expected<bool, Tools::SimpleError> Weather::get_CURL(std::string url_cURL, std::string _FileName) noexcept
 	{
 
 		std::string Path = Get_DataLocation() + "\\" + _FileName;
@@ -100,7 +100,14 @@ namespace yc {
 		if (file == NULL || fileOpen_code != 0)
 		{
 			log_write(Err, "Create file (" + Path + ") failed. At function \"get_CURL\" when preparing to store Weather source", "Weather::get_CURL");
-			return FALSE;
+			return std::unexpected(
+				Tools::SimpleError(
+				10,
+				"Create file (" + Path + ") failed when preparing to store Weather source",
+				"fopen_s()",
+				"Please check if the file path is valid and if you have permission to write to it.",
+				true)
+			);
 		}
 		//prepare to store weather data
 
@@ -148,7 +155,7 @@ namespace yc {
 				curl_easy_cleanup(curl);
 				fclose(file);
 				/* Always clean up ! */
-				return TRUE;
+				return true;
 			}
 			else
 			{
@@ -157,20 +164,34 @@ namespace yc {
 					{"URL",  url_cURL },
 					{ "cURL",  std::string(curl_easy_strerror(res_code)) }
 					});
-				//log_write(Warn, "...more from curl: " + std::string(curl_easy_strerror(res_code)), "Weather::get_CURL");
 				using WE = ycresult::ExcptType;
 				using WA = ycresult::AddressMethod;
-				ycresult::ycresult e(WE::curl, WA::back, "Network error.\n" + std::string(curl_easy_strerror(res_code)));
+				// ycresult::ycresult e(WE::curl, WA::back, "Network error.\n" + std::string(curl_easy_strerror(res_code)));
 				curl_slist_free_all(headers);
 				curl_easy_cleanup(curl);
 				fclose(file);
-				// throw e;                     //  作为一个有返回值的函数，不能抛出异常。并且异常可能导致内存泄露、出现没有返回值等情况，导致外部引用出出现不确定bug。
-				return false;
+		
+				return std::unexpected(
+					Tools::SimpleError(
+						20,
+						"Network error. More details:\n" + std::string(curl_easy_strerror(res_code)),
+						"curl_easy_perform()",
+						"Please check your network connection and try again.",
+						true)
+				);
 			}
 		}
 		else
 		{
 			log_write(Err, "Curl setup error. Please try again.", "Weather::get_CURL");
+			return std::unexpected(
+				Tools::SimpleError(
+					20,
+					"Curl setup error.",
+					"curl_easy_perform()",
+					"Please restart the app and try again.",
+					true)
+			);
 		}
 
 		curl_slist_free_all(headers);
@@ -183,7 +204,7 @@ namespace yc {
 		return false;
 	}
 
-	bool Weather::get_HttpClient(std::string url_cURL, std::string* res)
+	std::expected<bool, Tools::SimpleError> Weather::get_HttpClient(std::string url_cURL, std::string* res)  noexcept
 	{
 
 #ifdef DeskTop_yc
@@ -238,8 +259,15 @@ namespace yc {
 				ycresult::AddressMethod::back,
 				"Response ReasonPhrase:" + winrt::to_string(resMsg.ReasonPhrase())
 			);
-			*/                            //  作为一个有返回值的函数，不能抛出异常。并且异常可能导致内存泄露、出现没有返回值等情况，导致外部引用出出现不确定bug。
-			return false;
+			*/    
+			return std::unexpected(
+				Tools::SimpleError(
+					20,
+					"Network error. More details:\nResponse ReasonPhrase:" + winrt::to_string(resMsg.ReasonPhrase()),
+					"get_HttpClient()",
+					"Please check your network connection and try again.",
+					true)
+			);
 		}
 
 #endif // DeskTop_yc
@@ -250,9 +278,9 @@ namespace yc {
 
 
 
-	bool Weather::get_weather(Type type, WebPage::WebPage* page)
+	std::expected<bool, Tools::SimpleError> Weather::get_weather(Type type, WebPage::WebPage* page) noexcept
 	{
-		if (!page) return false;         //nullptr
+		if (!page) return std::unexpected(Tools::SimpleError(-10, "Invalid page pointer", "Weather::get_weather", "Application error, please restart the app."));
 
 		using CT = Type;
 
@@ -265,9 +293,9 @@ namespace yc {
 
 			Tools::log_write(Tools::Info, "Try getting location.", "Weather::get_weather");
 
-			std::string URL_GetLocationCode = "http://wgeo.weather.com.cn/ip/?_=" + Time;
+			std::string URL_GetLocationCode = this->URL_Get_LocationCode_Base + Time;
 
-			bool res1 = 0;
+			std::expected<bool, Tools::SimpleError> res1 = std::unexpected(Tools::SimpleError(0, "Initial value", "Weather::get_weather"));
 			std::string resContent;
 
 			try
@@ -282,7 +310,8 @@ namespace yc {
 			}
 			catch (const ycresult::ycresult& e)
 			{
-				// needed to deal with. needed nomal handler of ycresult::ycresults
+				Tools::log_write(Tools::FErr, "There should no be an exception!", "Weather::get_weather", { {"Exception", e.what()}, {"Exception Type",  e.return_string_ExcptType()} });
+				return std::unexpected(Tools::SimpleError(-10, e.what(), "Weather::get_weather", "Application error, please restart the app."));
 			}
 
 
@@ -290,27 +319,42 @@ namespace yc {
 
 			// get
 
-			if (!res1)
+			if (!(res1.value_or(false)))
 			{
 				Tools::log_write(Tools::Warn, "Failed to get location!", "Weather::get_weather");
 			}
 			else
 			{
 
+				try
+				{
+
 #ifdef _CONSOLE
-				page->read("Location.txt",
-					Type::location,
-					WebPage::DocType::JavaScript,
-					URL_GetLocationCode);
+					page->read("Location.txt",
+						Type::location,
+						WebPage::DocType::JavaScript,
+						URL_GetLocationCode);
 #endif // _CONSOLE
 
 #ifdef DeskTop_yc
-				page->make(&resContent,
-					Type::location,
-					WebPage::DocType::JavaScript,
-					URL_GetLocationCode);
+					page->make(&resContent,
+						Type::location,
+						WebPage::DocType::JavaScript,
+						URL_GetLocationCode);
 #endif // DeskTop_yc
 
+				}
+				catch (const ycresult::ycresult& excpt) {
+					log_write(Warn, "Maybe read after getting weather failed.At function \"page.read\" or \"page.make\" ", "Weather::get_CURL", { {"Exception", excpt.what()}});
+					return std::unexpected(
+						Tools::SimpleError(
+							10,
+							"Maybe read after getting weather failed. This is unexpeccted.\nExceptions: " + std::string(excpt.what()),
+							"page",
+							"Please check if you have permission to write in the directories.",
+							true)
+					);
+				}
 				// make page
 
 
@@ -327,7 +371,7 @@ namespace yc {
 
 			Tools::log_write(Tools::Info, "Try getting weather infomation.", "Weather::get_weather");
 
-			std::string URL_Content = "http://d1.weather.com.cn/sk_2d/" + Position::getPositionCode() + ".html?_=" + Time;     //MAKE URL
+			std::string URL_Content = URL_Get_Instant_Weather_Base + Position::getPositionCode() + ".html?_=" + Time;     //MAKE URL
 
 			Tools::log_write(Tools::Info, "Get content. URL is: " + URL_Content, "Weather::get_weather");
 
@@ -335,7 +379,7 @@ namespace yc {
 			*c_fileName = Position::getPositionCode() + "_" + Time + ".txt";
 
 
-			bool res2 = 0;
+			std::expected<bool, Tools::SimpleError> res2 = 0;
 			std::string resContent;
 
 			try
@@ -351,11 +395,12 @@ namespace yc {
 			}
 			catch (const ycresult::ycresult& e)
 			{
-				// needed to deal with. needed nomal handler of ycresult::ycresults
+				Tools::log_write(Tools::FErr, "There should no be an exception!", "Weather::get_weather", { {"Exception", e.what()}, {"Exception Type",  e.return_string_ExcptType()} });
+				return std::unexpected(Tools::SimpleError(-10, e.what(), "Weather::get_weather", "Application error, please restart the app."));
 			}
 
 
-			if (!res2) {
+			if (!(res2.value_or(false))) {
 				Tools::log_write(Tools::Warn, "Failed to get weather infomation!", "Weather::get_weather");
 			}
 			else
@@ -391,13 +436,13 @@ namespace yc {
 
 			Tools::log_write(Tools::Info, "Try getting warnings.", "Weather::get_weather");
 
-			std::string URL_Warnings = "http://d1.weather.com.cn/dingzhi/" + Position::getPositionCode() + ".html?_=" + Time;             //MAKE URL       
+			std::string URL_Warnings = this->URL_Get_Warnings_Base + Position::getPositionCode() + ".html?_=" + Time;             //MAKE URL       
 			std::string* w_fileName = new std::string;
 			*w_fileName = "warnings_" + Position::getPositionCode() + "_" + Time + ".txt";
 
 			Tools::log_write(Tools::Info, "Get warnings. URL is: " + URL_Warnings, "Weather::get_weather");
 
-			bool res3 = 0;
+			std::expected<bool, Tools::SimpleError> res3 = 0;
 			std::string resContent;
 
 			try
@@ -412,12 +457,14 @@ namespace yc {
 			}
 			catch (const ycresult::ycresult& e)
 			{
-				// needed to deal with. needed nomal handler of ycresult::ycresults
+				Tools::log_write(Tools::FErr, "There should no be an exception!", "Weather::get_weather", { {"Exception", e.what()}, {"Exception Type",  e.return_string_ExcptType()} });
+				return std::unexpected(Tools::SimpleError(-10, "Invalid page pointer", "Weather::get_weather", "Application error, please restart the app."));
 			}
 
 
 			if (!res3) {
 				Tools::log_write(Tools::Warn, "Failed to get warnings!", "Weather::get_weather");
+				return res3;
 			}
 			else
 			{
@@ -445,12 +492,12 @@ namespace yc {
 		return false;
 	}
 
-	bool Weather::get_weather_kit(Type type)
+	std::expected<bool, SimpleError> Weather::get_weather_kit(Type type) noexcept
 	{
 		// std::unique_ptr<WebPage::WebPage> pg = std::make_unique<WebPage::WebPage>(WebPage::WebPage());
 		WebPage::WebPage* pg = new WebPage::WebPage;
-		bool res = get_weather(type, pg);
-		if (res)
+		std::expected<bool, SimpleError> res = get_weather(type, pg);
+		if (res.value_or(false))
 		{
 
 			try
@@ -463,7 +510,7 @@ namespace yc {
 				std::string what = e.what();
 				std::string detail = std::format("{0}  {1}  {2}", e.return_string_ExcptType(), e.return_string_AddressMethod(), what);
 				Tools::log_write(Warn, "detail: " + detail, "Weather::analysis");
-				return false;
+				return std::unexpected(Tools::SimpleError(40, "Analysis failed.\n" + detail, "analyse", "Service not available. Please upgrade the app.", true));
 			}
 			
 
@@ -476,7 +523,7 @@ namespace yc {
 			Tools::log_write(Warn, "\"get_weather_kit\" failed. (" + return_string(type) + ")", "Weather::get_weather_kit");
 		}
 		delete pg;
-		return false;
+		return res;
 	}
 
 	void Weather::setHeaders() {

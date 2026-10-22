@@ -74,6 +74,7 @@ namespace Tools
 
 	};
 
+	// infoset: { {"xxx", "xxx"}, {"yyy", "yyy"} }
 	void log_write(int lvl, std::string writelog, std::string region, InfoSet info, std::vector<std::string> call);
 	void log_write(int lvl, std::string writelog, std::string region, InfoSet info);
 	void log_write(int lvl, std::string writelog, std::string region = std::source_location::current().function_name());
@@ -89,6 +90,25 @@ namespace Tools
 	// 应在程序退出前（或 return 前）调用。
 	// 若未调用 InitLogSystem() 则此函数为空操作。
 	void ShutdownLogSystem();
+
+
+	// 函数预期内失败时，简单提供信息。搭配 std::expected 使用。
+	// 构造函数：type: 错误类型，msg: 错误信息，region: 错误发生的函数或模块，prompt: 用户提示信息，logged: 是否已记录日志
+	class SimpleError
+	{
+	public:
+		int  ErrType;
+		std::string ErrMsg;
+		std::string ErrRegion;
+		std::string UserPrompt;
+		bool HasLogged;
+
+		SimpleError(int type, std::string msg, std::string region, std::string prompt = "", bool logged = false)
+			: ErrType{ type }, ErrMsg{ msg }, ErrRegion{ region }, UserPrompt{ prompt }, HasLogged{ logged } {}
+		SimpleError() : ErrType{ 0 }, ErrMsg{ "Nothing provided" }, ErrRegion{ "" }, UserPrompt{ "" }, HasLogged{ false } {}
+
+		std::string SimpleDetails() { return std::format("Error Type is {}, at {}: {} You can do as follow: {}", ErrType, ErrMsg, ErrRegion, UserPrompt); }
+	};
 }
 
 #endif // !_TOOLS

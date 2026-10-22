@@ -28,6 +28,7 @@
 | 9 | `Tools_.cpp` 遗留文件、`resource1.h` 缺失引用 | 工程 | 低 |
 | 10 | `Type::forecast` 声明但未实现 | `WebPage.h` / `weather.cpp` | 低 |
 | 11 | 其它代码整洁问题（未使用字段、死代码、裸指针风格等） | 多处 | 低 |
+| 12 | 跨平台移植问题，使用curl必须宏定义 _console | `weather.cpp` `Intergration.md` ` | 低* |
 
 ---
 

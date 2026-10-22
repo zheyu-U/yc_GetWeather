@@ -93,7 +93,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;CURL_STATICLIB;BUILDING_LIBCURL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpp23</LanguageStandard>
       <SupportJustMyCode>true</SupportJustMyCode>
     </ClCompile>
     <Link>
@@ -110,7 +110,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;CURL_STATICLIB;BUILDING_LIBCURL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpp23</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <SupportJustMyCode>true</SupportJustMyCode>
     </ClCompile>
@@ -147,7 +147,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpp23</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -182,7 +182,20 @@
     <ClInclude Include="WebPage.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="doc\build_config.md" />
+    <None Include="doc\Integration.md" />
+    <None Include="doc\known_issues.md" />
     <None Include="doc\Overview.md" />
+    <None Include="doc\pch.md" />
+    <None Include="doc\repo_docs.md" />
+    <None Include="doc\resource.md" />
+    <None Include="doc\third_party.md" />
+    <None Include="doc\Tools.md" />
+    <None Include="doc\Tools_.md" />
+    <None Include="doc\weather.md" />
+    <None Include="doc\WeatherException.md" />
+    <None Include="doc\WebPage.md" />
+    <None Include="doc\云寸.md" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\icon256.ico" />

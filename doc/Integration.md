@@ -1,30 +1,21 @@
 ﻿# Integration — 集成与复用指南
 
-> 所属层：跨层（面向使用者的接入说明）　|　来源：`weather.h` / `Tools.h` / `WebPage.h` / `WeatherException.h` 的公开接口，结合 `云寸.cpp` 与 `云寸.vcxproj` 的实际用法
-> 职责概述：说明如何把本项目核心（`云寸.cpp` 以外的各层）作为"源码级库"接入你自己的工程——环境准备、文件拷贝、工程配置、生命周期调用顺序、最小示例、平台分支与踩坑清单。
-> 适用对象：想把天气能力嵌入自己程序（例如 UI 版 `yc_GetWeather_UI`）的开发者。
+> **所属层**：跨层（面向使用者的接入说明） 
 
-## 1. 先明确：本项目"库"的形态
+> **职责概述**：说明如何把本项目接入你自己的工程。包括环境准备、文件拷贝、工程配置、生命周期调用顺序、最小示例、平台分支与踩坑清单。  
 
-### 1.1 现状核查
+> **适用对象**：想把天气能力嵌入自己程序（例如 UI 版 `yc_GetWeather_UI`）的开发者。
 
-| 检查项 | 结果 |
-| --- | --- |
-| 工程输出类型（`ConfigurationType`） | `Application`（`Debug/Release` × `Win32/x64` 四个配置全部如此） |
-| 是否产出 `.lib` / `.dll` | ❌ 无，产出的是 `云寸.exe` |
-| 是否有导出宏（`__declspec(dllexport)` / `YC_API`） | ❌ 无 |
-| 是否有 `.def` 模块定义文件 | ❌ 无 |
-| 是否有 CMake / vcpkg / NuGet 等封装 | ❌ 无，只有 `.sln` + `.vcxproj` |
+## 1. 源码级复用
 
-### 1.2 结论：源码级复用
 
-本项目**目前不是发行态的二进制库**（没有可供 `#pragma comment(lib, ...)` 或包管理器引用的产物），它的复用方式是**源码级复用（source-level reuse）**。
+本项目的复用方式是 **源码级复用（source-level reuse）**。
 
 因此"使用这个库"的实际做法固定为五步：
 
-1. 把核心源文件（`weather.*`、`WebPage.*`、`Tools.*`、`WeatherException.*`、`pch.*`）拷进你自己的工程；
+1. 把源文件（`weather.*`、`WebPage.*`、`Tools.*`、`WeatherException.*`、`pch.*`）拷进你自己的工程，不包括 `云寸.cpp`；
 2. 在你的工程里定义平台宏（`_CONSOLE` 或 `DeskTop_yc`）；
-3. 自行准备头文件路径并链接 libcurl；
+3. 若要使用curl，自行准备头文件路径并链接 libcurl，定义`_CONSOLE` 宏；
 4. 按约定顺序调用初始化 / 收尾函数（**责任在使用者，不在库内部**）；
 5. `#include "weather.h"`，使用 `yc::Weather`。
 
@@ -65,7 +56,7 @@ std::vector<std::string> Headers;
 
 | 方法 | 作用 | 备注 |
 | --- | --- | --- |
-| `Weather()` / `Weather(Type)` / `Weather(Type, location, locationCode)` | 三个构造函数 | 构造时自动 `setHeaders()` 并记录时间戳 |
+| `Weather()` /  `Weather(Type)` / `Weather(Type, location, locationCode)` | 三个构造函数 | 构造时自动 `setHeaders()` 并记录时间戳 |
 | `bool get_weather_kit(Type)` | **推荐入口**：下载 + 解析一步到位 | 内部吞掉解析异常，仅以返回值表达成败；**不向外抛 `ycresult`** |
 | `bool get_weather(Type, WebPage*)` | 只下载并生成 `WebPage` | 需自行管理 `WebPage*` 生命周期 |
 | `void analysis(WebPage*)` | 只解析已有 `WebPage` | **会抛 `ycresult`**，需自行 catch |
@@ -395,8 +386,3 @@ namespace Position {
 | 工程与构建配置 | [build_config.md](build_config.md) |
 | libcurl / colored-cout 说明 | [third_party.md](third_party.md) |
 | 已知风险与改造方向 | [known_issues.md](known_issues.md) |
- D doc/yc_weather.md                 ← 旧文档删除
- M 云寸.vcxproj                       ← 1 行：yc_weather.md → Overview.md
- M 云寸.vcxproj.filters               ← 1 行：同上
-?? doc/ 下 15 个 md（含新增 Integration.md）
-?? .vscode/                           ← 与本次工作无关，未触碰
